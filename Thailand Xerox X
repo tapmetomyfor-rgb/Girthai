@@ -1,35 +1,40 @@
--- [[ Thailand Xerox X - Custom UI Version (Official Asset ID) ]] --
+-- [[ Thailand XVP - Blade Ball Auto Parry Edition ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 LocalPlayer.CharacterAdded:Connect(function(c) Character = c end)
 
--- 🖼️ ใช้ Asset ID ของคุณเรียบร้อย
+-- 🖼️ Asset ID โลโก้ของคุณ
 local LogoAsset = "rbxassetid://94715455570142"
 
 ----------------------------------------------------------------
--- [ 1. สร้าง ScreenGui & Main UI ]
+-- [ 1. ScreenGui & Main Frame ]
 ----------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ThailandXeroxX_Gui"
+ScreenGui.Name = "ThailandXVP_BladeBall_Gui"
 pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 500, 0, 330)
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -165)
+MainFrame.Size = UDim2.new(0, 520, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -180)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
--- โลโก้รูปภาพบนหัวข้อสคริปต์
+-- Header Logo
 local HeaderLogo = Instance.new("ImageLabel", MainFrame)
 HeaderLogo.Size = UDim2.new(0, 30, 0, 30)
 HeaderLogo.Position = UDim2.new(0, 12, 0, 8)
@@ -39,7 +44,7 @@ HeaderLogo.Image = LogoAsset
 local TitleBar = Instance.new("TextLabel", MainFrame)
 TitleBar.Size = UDim2.new(1, -60, 0, 40)
 TitleBar.Position = UDim2.new(0, 48, 0, 0)
-TitleBar.Text = "Thailand Xerox X"
+TitleBar.Text = "Thailand XVP"
 TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleBar.TextSize = 18
 TitleBar.Font = Enum.Font.SourceSansBold
@@ -47,26 +52,69 @@ TitleBar.TextXAlignment = Enum.TextXAlignment.Left
 TitleBar.BackgroundTransparency = 1
 
 local Sidebar = Instance.new("Frame", MainFrame)
-Sidebar.Size = UDim2.new(0, 130, 1, -50)
+Sidebar.Size = UDim2.new(0, 135, 1, -50)
 Sidebar.Position = UDim2.new(0, 10, 0, 42)
 Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 Sidebar.BorderSizePixel = 0
 Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 8)
 
 local PageContainer = Instance.new("Frame", MainFrame)
-PageContainer.Size = UDim2.new(1, -160, 1, -50)
-PageContainer.Position = UDim2.new(0, 150, 0, 42)
+PageContainer.Size = UDim2.new(1, -165, 1, -50)
+PageContainer.Position = UDim2.new(0, 155, 0, 42)
 PageContainer.BackgroundTransparency = 1
 
 ----------------------------------------------------------------
--- [ 2. ระบบหมวดหมู่ Tabs ]
+-- [ 2. Language & Tabs ]
 ----------------------------------------------------------------
+local CurrentLanguage = "TH"
+local LanguageData = {
+    TH = {
+        Tab1 = "Menu Xerox",
+        Tab2 = "PVP Xerox VP",
+        Tab3 = "Setting Xerox",
+        Speed = "วิ่งเร็ว (ระดับ 1-10)",
+        Noclip = "ทะลุกำแพง (Noclip)",
+        Fly = "บินได้ (Fly)",
+        FlySpeed = "ความเร็วบิน (ระดับ 1-10)",
+        Jump = "โดดสูง (ระดับ 1-10)",
+        Invis = "หายตัว (Invisible)",
+        AutoParry = "ตีบอลออโต้ Blade Ball ⚡",
+        ESP = "ESP สีตัวคน + ป้ายชื่อ",
+        ESPColor = "สลับสี ESP (แดง/เขียว/ฟ้า/เหลือง)",
+        Aimbot = "Aimbot ล็อคเป้าหมายกลางจอ",
+        Potato = "ภาพดินน้ำมัน (Potato Graphics)",
+        FullBright = "เพิ่มแสง (FullBright)",
+        WebhookPlaceholder = "วางลิงก์ Discord Webhook...",
+        SendWebhook = "ส่งการแจ้งเตือน Webhook"
+    },
+    ENG = {
+        Tab1 = "Menu Xerox",
+        Tab2 = "PVP Xerox VP",
+        Tab3 = "Setting Xerox",
+        Speed = "WalkSpeed (Level 1-10)",
+        Noclip = "Noclip",
+        Fly = "Fly Mode",
+        FlySpeed = "Fly Speed (Level 1-10)",
+        Jump = "JumpPower (Level 1-10)",
+        Invis = "Invisible",
+        AutoParry = "Auto Parry Blade Ball ⚡",
+        ESP = "Player Body Color ESP + Name",
+        ESPColor = "Change ESP Color",
+        Aimbot = "Aimbot (Center Lock)",
+        Potato = "Potato Graphics",
+        FullBright = "FullBright",
+        WebhookPlaceholder = "Paste Discord Webhook...",
+        SendWebhook = "Send Webhook Alert"
+    }
+}
+
 local Pages = {}
 local TabButtons = {}
+local TextObjects = {}
 
-local function CreateTab(tabName, order)
+local function CreateTab(tabKey, order)
     local Page = Instance.new("ScrollingFrame", PageContainer)
-    Page.Name = tabName .. "Page"
+    Page.Name = tabKey .. "Page"
     Page.Size = UDim2.new(1, 0, 1, 0)
     Page.BackgroundTransparency = 1
     Page.BorderSizePixel = 0
@@ -77,20 +125,22 @@ local function CreateTab(tabName, order)
     UIList.SortOrder = Enum.SortOrder.LayoutOrder
     UIList.Padding = UDim.new(0, 8)
     
-    Pages[tabName] = Page
+    Pages[tabKey] = Page
 
     local TabBtn = Instance.new("TextButton", Sidebar)
     TabBtn.Size = UDim2.new(1, -10, 0, 35)
     TabBtn.Position = UDim2.new(0, 5, 0, (order - 1) * 40 + 5)
     TabBtn.BackgroundColor3 = (order == 1) and Color3.fromRGB(35, 35, 45) or Color3.fromRGB(22, 22, 28)
-    TabBtn.Text = tabName
+    TabBtn.Text = LanguageData[CurrentLanguage][tabKey]
     TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabBtn.Font = Enum.Font.SourceSans
-    TabBtn.TextSize = 14
+    TabBtn.Font = Enum.Font.SourceSansBold
+    TabBtn.TextSize = 13
     Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
 
+    TextObjects[TabBtn] = function() TabBtn.Text = LanguageData[CurrentLanguage][tabKey] end
+
     TabBtn.MouseButton1Click:Connect(function()
-        for name, p in pairs(Pages) do p.Visible = (name == tabName) end
+        for name, p in pairs(Pages) do p.Visible = (name == tabKey) end
         for _, b in pairs(TabButtons) do b.BackgroundColor3 = Color3.fromRGB(22, 22, 28) end
         TabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     end)
@@ -99,16 +149,14 @@ local function CreateTab(tabName, order)
     return Page
 end
 
-local Tab1 = CreateTab("Menu Xerox", 1)
-local Tab2 = CreateTab("PVP Xerox VP", 2)
-local Tab3 = CreateTab("Setting Xerox", 3)
+local Tab1 = CreateTab("Tab1", 1)
+local Tab2 = CreateTab("Tab2", 2)
+local Tab3 = CreateTab("Tab3", 3)
 
 ----------------------------------------------------------------
--- [ 3. ฟังก์ชันและปุ่มกด ]
+-- [ 3. UI Elements Builder ]
 ----------------------------------------------------------------
-local NoclipEnabled = false
-
-local function CreateToggle(parent, text, default, callback)
+local function CreateToggle(parent, langKey, default, callback)
     local Frame = Instance.new("Frame", parent)
     Frame.Size = UDim2.new(1, -10, 0, 35)
     Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
@@ -117,12 +165,14 @@ local function CreateToggle(parent, text, default, callback)
     local Label = Instance.new("TextLabel", Frame)
     Label.Size = UDim2.new(1, -50, 1, 0)
     Label.Position = UDim2.new(0, 10, 0, 0)
-    Label.Text = text
+    Label.Text = LanguageData[CurrentLanguage][langKey] or langKey
     Label.TextColor3 = Color3.fromRGB(220, 220, 220)
     Label.Font = Enum.Font.SourceSans
-    Label.TextSize = 14
+    Label.TextSize = 13
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.BackgroundTransparency = 1
+
+    TextObjects[Label] = function() Label.Text = LanguageData[CurrentLanguage][langKey] or langKey end
 
     local Btn = Instance.new("TextButton", Frame)
     Btn.Size = UDim2.new(0, 30, 0, 20)
@@ -139,9 +189,75 @@ local function CreateToggle(parent, text, default, callback)
     end)
 end
 
--- หมวดหมู่ 1
-CreateToggle(Tab1, "ทะลุกำแพง (Noclip)", false, function(v) NoclipEnabled = v end)
-CreateToggle(Tab1, "หายตัว (Invisible)", false, function(v)
+local function CreateSlider(parent, langKey, min, max, default, callback)
+    local Frame = Instance.new("Frame", parent)
+    Frame.Size = UDim2.new(1, -10, 0, 45)
+    Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+
+    local Label = Instance.new("TextLabel", Frame)
+    Label.Size = UDim2.new(1, -20, 0, 20)
+    Label.Position = UDim2.new(0, 10, 0, 2)
+    Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(default)
+    Label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    Label.Font = Enum.Font.SourceSans
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.BackgroundTransparency = 1
+
+    local val = default
+    TextObjects[Label] = function() Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(val) end
+
+    local SliderBar = Instance.new("TextButton", Frame)
+    SliderBar.Size = UDim2.new(1, -20, 0, 8)
+    SliderBar.Position = UDim2.new(0, 10, 0, 28)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SliderBar.Text = ""
+    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+
+    local Fill = Instance.new("Frame", SliderBar)
+    Fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
+    Fill.BackgroundColor3 = Color3.fromRGB(255, 0, 50)
+    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
+
+    local dragging = false
+    local function update(input)
+        local pos = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+        val = math.floor(min + (max - min) * pos)
+        Fill.Size = UDim2.new(pos, 0, 1, 0)
+        Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(val)
+        callback(val)
+    end
+
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; update(input)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then update(input) end
+    end)
+end
+
+----------------------------------------------------------------
+-- [ 4. หมวดหมู่ที่ 1: Menu Xerox ]
+----------------------------------------------------------------
+local SpeedLevel = 1
+local NoclipEnabled = false
+local FlyEnabled = false
+local FlySpeedLevel = 1
+local JumpLevel = 1
+
+CreateSlider(Tab1, "Speed", 1, 10, 1, function(v) SpeedLevel = v end)
+CreateToggle(Tab1, "Noclip", false, function(v) NoclipEnabled = v end)
+CreateToggle(Tab1, "Fly", false, function(v) FlyEnabled = v end)
+CreateSlider(Tab1, "FlySpeed", 1, 10, 1, function(v) FlySpeedLevel = v end)
+CreateSlider(Tab1, "Jump", 1, 10, 1, function(v) JumpLevel = v end)
+
+CreateToggle(Tab1, "Invis", false, function(v)
     if Character then
         for _, p in pairs(Character:GetDescendants()) do
             if p:IsA("BasePart") or p:IsA("Decal") then p.Transparency = v and 1 or 0 end
@@ -149,12 +265,286 @@ CreateToggle(Tab1, "หายตัว (Invisible)", false, function(v)
     end
 end)
 
--- หมวดหมู่ 2
-CreateToggle(Tab2, "ตีบอลออโต้ (Bedball)", false, function(v) end)
-CreateToggle(Tab2, "เปิด ESP สีแดง", false, function(v) end)
+RunService.RenderStepped:Connect(function(dt)
+    if Character and Character:FindFirstChild("Humanoid") then
+        local hum = Character.Humanoid
+        hum.WalkSpeed = 16 + (SpeedLevel - 1) * 12
+        hum.UseJumpPower = true
+        hum.JumpPower = 50 + (JumpLevel - 1) * 20
+        hum.JumpHeight = 7.2 + (JumpLevel - 1) * 5
+    end
 
--- หมวดหมู่ 3
-CreateToggle(Tab3, "ภาพดินน้ำมัน (Potato)", false, function(v)
+    if NoclipEnabled and Character then
+        for _, p in pairs(Character:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
+        end
+    end
+
+    if FlyEnabled and Character and Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = Character.HumanoidRootPart
+        local flySpeed = FlySpeedLevel * 35
+        local moveDir = Vector3.new()
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+
+        if moveDir.Magnitude > 0 then
+            hrp.CFrame = hrp.CFrame + (moveDir.Unit * flySpeed * dt)
+        end
+        hrp.Velocity = Vector3.new(0,0,0)
+    end
+end)
+
+----------------------------------------------------------------
+-- [ 5. หมวดหมู่ที่ 2: PVP Xerox VP + ⚡ BLADE BALL AUTO PARRY ]
+----------------------------------------------------------------
+local AutoParryEnabled = false
+local ESPEnabled = false
+local ESPColors = {Color3.fromRGB(255,0,0), Color3.fromRGB(0,255,0), Color3.fromRGB(0,180,255), Color3.fromRGB(255,220,0)}
+local CurrentESPColorIdx = 1
+local AimbotEnabled = false
+
+-- 🎯 Crosshair FOV Circle
+local AimCircle = Instance.new("Frame", ScreenGui)
+AimCircle.Name = "AimbotFOV_Circle"
+AimCircle.Size = UDim2.new(0, 120, 0, 120)
+AimCircle.Position = UDim2.new(0.5, -60, 0.5, -60)
+AimCircle.BackgroundTransparency = 1
+AimCircle.Visible = false
+
+local AimStroke = Instance.new("UIStroke", AimCircle)
+AimStroke.Color = Color3.fromRGB(255, 0, 50)
+AimStroke.Thickness = 2
+
+local AimDot = Instance.new("Frame", AimCircle)
+AimDot.Size = UDim2.new(0, 6, 0, 6)
+AimDot.Position = UDim2.new(0.5, -3, 0.5, -3)
+AimDot.BackgroundColor3 = Color3.fromRGB(255, 0, 50)
+Instance.new("UICorner", AimDot).CornerRadius = UDim.new(1, 0)
+Instance.new("UICorner", AimCircle).CornerRadius = UDim.new(1, 0)
+
+-- ปุ่มเปิด Auto Parry
+CreateToggle(Tab2, "AutoParry", false, function(v) 
+    AutoParryEnabled = v 
+end)
+
+CreateToggle(Tab2, "ESP", false, function(v) ESPEnabled = v end)
+
+local ColorBtn = Instance.new("TextButton", Tab2)
+ColorBtn.Size = UDim2.new(1, -10, 0, 35)
+ColorBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"]
+ColorBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ColorBtn.Font = Enum.Font.SourceSans
+ColorBtn.TextSize = 13
+Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 6)
+TextObjects[ColorBtn] = function() ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"] end
+
+ColorBtn.MouseButton1Click:Connect(function()
+    CurrentESPColorIdx = (CurrentESPColorIdx % #ESPColors) + 1
+end)
+
+CreateToggle(Tab2, "Aimbot", false, function(v)
+    AimbotEnabled = v
+    AimCircle.Visible = v
+end)
+
+-- ระบบวาร์ป & ดึงผู้เล่น
+local PlayerSelectFrame = Instance.new("Frame", Tab2)
+PlayerSelectFrame.Size = UDim2.new(1, -10, 0, 80)
+PlayerSelectFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+Instance.new("UICorner", PlayerSelectFrame).CornerRadius = UDim.new(0, 6)
+
+local SelectedPlayer = nil
+
+local PlrDropdown = Instance.new("TextButton", PlayerSelectFrame)
+PlrDropdown.Size = UDim2.new(1, -20, 0, 30)
+PlrDropdown.Position = UDim2.new(0, 10, 0, 8)
+PlrDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+PlrDropdown.Text = "เลือกผู้เล่น (Select Player)..."
+PlrDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlrDropdown.Font = Enum.Font.SourceSans
+PlrDropdown.TextSize = 13
+Instance.new("UICorner", PlrDropdown).CornerRadius = UDim.new(0, 4)
+
+PlrDropdown.MouseButton1Click:Connect(function()
+    local plrs = Players:GetPlayers()
+    for _, p in ipairs(plrs) do
+        if p ~= LocalPlayer then
+            SelectedPlayer = p
+            PlrDropdown.Text = "เลือกแล้ว: " .. p.DisplayName
+            break
+        end
+    end
+end)
+
+local TpToBtn = Instance.new("TextButton", PlayerSelectFrame)
+TpToBtn.Size = UDim2.new(0.48, 0, 0, 28)
+TpToBtn.Position = UDim2.new(0, 10, 0, 44)
+TpToBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+TpToBtn.Text = "วาร์ปไปหา (TP To)"
+TpToBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+TpToBtn.Font = Enum.Font.SourceSans
+TpToBtn.TextSize = 12
+Instance.new("UICorner", TpToBtn).CornerRadius = UDim.new(0, 4)
+
+TpToBtn.MouseButton1Click:Connect(function()
+    if SelectedPlayer and SelectedPlayer.Character and SelectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        if Character and Character:FindFirstChild("HumanoidRootPart") then
+            Character.HumanoidRootPart.CFrame = SelectedPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        end
+    end
+end)
+
+local BringBtn = Instance.new("TextButton", PlayerSelectFrame)
+BringBtn.Size = UDim2.new(0.48, 0, 0, 28)
+BringBtn.Position = UDim2.new(0.52, -10, 0, 44)
+BringBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+BringBtn.Text = "ดึงมาหา (Bring)"
+BringBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+BringBtn.Font = Enum.Font.SourceSans
+BringBtn.TextSize = 12
+Instance.new("UICorner", BringBtn).CornerRadius = UDim.new(0, 4)
+
+BringBtn.MouseButton1Click:Connect(function()
+    if SelectedPlayer and SelectedPlayer.Character and SelectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        if Character and Character:FindFirstChild("HumanoidRootPart") then
+            local myPos = Character.HumanoidRootPart.CFrame
+            Character.HumanoidRootPart.CFrame = SelectedPlayer.Character.HumanoidRootPart.CFrame
+            task.wait(0.1)
+            Character.HumanoidRootPart.CFrame = myPos
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- ⚡ [ ระบบ Auto Parry ของ Blade Ball คำนวณความเร็วบอล ]
+----------------------------------------------------------------
+local function ParryBall()
+    -- จำลองการกดปุ่ม 'F'
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+    task.wait(0.01)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+
+    -- สั่งยิง Remote เผื่อเกมบางอัปเดตล็อค KeyInput
+    pcall(function()
+        local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") or game:GetService("ReplicatedStorage")
+        if remotes:FindFirstChild("ParryButtonPress") then
+            remotes.ParryButtonPress:FireServer()
+        elseif remotes:FindFirstChild("Parry") then
+            remotes.Parry:FireServer()
+        end
+    end)
+end
+
+RunService.PreRender:Connect(function()
+    if not AutoParryEnabled then return end
+    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
+
+    local hrp = Character.HumanoidRootPart
+    local ballsFolder = workspace:FindFirstChild("Balls") or workspace
+
+    for _, obj in pairs(ballsFolder:GetChildren()) do
+        if obj:IsA("BasePart") or obj.Name == "Ball" or obj:getAttribute("realBall") == true then
+            local ball = obj
+            local distance = (ball.Position - hrp.Position).Magnitude
+            local velocity = ball.Velocity.Magnitude
+            
+            -- คำนวณระยะที่ต้องปัดบอลตามความเร็วบอลจริง (Dynamic Parry Distance)
+            local parryDistance = math.clamp(velocity * 0.55, 15, 65)
+
+            -- ตรวจสอบว่าลูกบอลกำลังพุ่งมาหาตัวเราหรือไม่
+            local isTargetingMe = false
+            if ball:FindFirstChild("Target") and ball.Target.Value == LocalPlayer.Name then
+                isTargetingMe = true
+            elseif (ball.Position + ball.Velocity - hrp.Position).Magnitude < distance then
+                isTargetingMe = true
+            end
+
+            -- ถ้าบอลพุ่งมาหา และอยู่ในระยะ -> สั่งตีบอลทันที!
+            if isTargetingMe and distance <= parryDistance then
+                ParryBall()
+                break
+            end
+        end
+    end
+end)
+
+-- 🔴 Render Loop สำหรับ ESP & Aimbot
+RunService.RenderStepped:Connect(function()
+    local nearestPlr = nil
+    local shortestDist = 60
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local char = plr.Character
+            local highlight = char:FindFirstChild("ThailandXVP_Highlight")
+            local bbGui = char:FindFirstChild("ThailandXVP_NameTag")
+
+            if ESPEnabled then
+                if not highlight then
+                    highlight = Instance.new("Highlight", char)
+                    highlight.Name = "ThailandXVP_Highlight"
+                end
+                highlight.FillColor = ESPColors[CurrentESPColorIdx]
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.3
+                highlight.OutlineTransparency = 0
+                highlight.Enabled = true
+
+                if not bbGui and char:FindFirstChild("Head") then
+                    bbGui = Instance.new("BillboardGui", char)
+                    bbGui.Name = "ThailandXVP_NameTag"
+                    bbGui.Adornee = char.Head
+                    bbGui.Size = UDim2.new(0, 100, 0, 30)
+                    bbGui.StudsOffset = Vector3.new(0, 2.5, 0)
+                    bbGui.AlwaysOnTop = true
+
+                    local txt = Instance.new("TextLabel", bbGui)
+                    txt.Size = UDim2.new(1, 0, 1, 0)
+                    txt.BackgroundTransparency = 1
+                    txt.Text = plr.DisplayName
+                    txt.Font = Enum.Font.SourceSansBold
+                    txt.TextSize = 14
+                    txt.TextStrokeTransparency = 0
+                end
+                if bbGui and bbGui:FindFirstChildOfClass("TextLabel") then
+                    bbGui:FindFirstChildOfClass("TextLabel").TextColor3 = ESPColors[CurrentESPColorIdx]
+                    bbGui.Enabled = true
+                end
+            else
+                if highlight then highlight.Enabled = false end
+                if bbGui then bbGui.Enabled = false end
+            end
+
+            if AimbotEnabled and char:FindFirstChild("Head") then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(char.Head.Position)
+                if onScreen then
+                    local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                    local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - centerScreen).Magnitude
+                    
+                    if distFromCenter < shortestDist then
+                        shortestDist = distFromCenter
+                        nearestPlr = plr
+                    end
+                end
+            end
+        end
+    end
+
+    if AimbotEnabled and nearestPlr and nearestPlr.Character and nearestPlr.Character:FindFirstChild("Head") then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestPlr.Character.Head.Position)
+    end
+end)
+
+----------------------------------------------------------------
+-- [ 6. หมวดหมู่ที่ 3: Setting Xerox ]
+----------------------------------------------------------------
+CreateToggle(Tab3, "Potato", false, function(v)
     if v then
         for _, p in pairs(workspace:GetDescendants()) do
             if p:IsA("BasePart") then p.Material = Enum.Material.SmoothPlastic end
@@ -162,31 +552,91 @@ CreateToggle(Tab3, "ภาพดินน้ำมัน (Potato)", false, funct
     end
 end)
 
-CreateToggle(Tab3, "เพิ่มแสง (FullBright)", false, function(v)
+local LangBtn = Instance.new("TextButton", Tab3)
+LangBtn.Size = UDim2.new(1, -10, 0, 35)
+LangBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+LangBtn.Text = "เปลี่ยนภาษา (Language): 🇹🇭 TH"
+LangBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+LangBtn.Font = Enum.Font.SourceSans
+LangBtn.TextSize = 13
+Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 6)
+
+LangBtn.MouseButton1Click:Connect(function()
+    CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
+    LangBtn.Text = "เปลี่ยนภาษา (Language): " .. ((CurrentLanguage == "TH") and "🇹🇭 TH" or "🇬🇧 ENG")
+    for _, func in pairs(TextObjects) do func() end
+end)
+
+CreateToggle(Tab3, "FullBright", false, function(v)
     Lighting.Brightness = v and 2 or 1
     Lighting.GlobalShadows = not v
 end)
 
--- Loop Noclip
-RunService.Stepped:Connect(function()
-    if NoclipEnabled and Character then
-        for _, p in pairs(Character:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = false end
+-- Webhook
+local WebhookFrame = Instance.new("Frame", Tab3)
+WebhookFrame.Size = UDim2.new(1, -10, 0, 85)
+WebhookFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+Instance.new("UICorner", WebhookFrame).CornerRadius = UDim.new(0, 6)
+
+local WebhookInput = Instance.new("TextBox", WebhookFrame)
+WebhookInput.Size = UDim2.new(1, -20, 0, 30)
+WebhookInput.Position = UDim2.new(0, 10, 0, 8)
+WebhookInput.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+WebhookInput.PlaceholderText = LanguageData[CurrentLanguage]["WebhookPlaceholder"]
+WebhookInput.Text = ""
+WebhookInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+WebhookInput.Font = Enum.Font.SourceSans
+WebhookInput.TextSize = 11
+Instance.new("UICorner", WebhookInput).CornerRadius = UDim.new(0, 4)
+
+local SendWebhookBtn = Instance.new("TextButton", WebhookFrame)
+SendWebhookBtn.Size = UDim2.new(1, -20, 0, 30)
+SendWebhookBtn.Position = UDim2.new(0, 10, 0, 46)
+SendWebhookBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+SendWebhookBtn.Text = LanguageData[CurrentLanguage]["SendWebhook"]
+SendWebhookBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SendWebhookBtn.Font = Enum.Font.SourceSansBold
+SendWebhookBtn.TextSize = 13
+Instance.new("UICorner", SendWebhookBtn).CornerRadius = UDim.new(0, 4)
+
+SendWebhookBtn.MouseButton1Click:Connect(function()
+    local url = WebhookInput.Text
+    if url ~= "" and (string.find(url, "discord.com/api/webhooks") or string.find(url, "discordapp.com/api/webhooks")) then
+        local data = {
+            ["content"] = "🚀 **Thailand XVP Loaded!**",
+            ["embeds"] = {{
+                ["title"] = "สคริปต์ Thailand XVP ถูกเปิดใช้งานแล้ว",
+                ["description"] = "ผู้เล่น: **" .. LocalPlayer.Name .. "** (" .. LocalPlayer.DisplayName .. ")\nGame ID: " .. game.PlaceId,
+                ["color"] = 16711730
+            }}
+        }
+        local json = HttpService:JSONEncode(data)
+        local requestFunc = syn and syn.request or http and http.request or request or http_request
+        if requestFunc then
+            requestFunc({
+                Url = url,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = json
+            })
+            SendWebhookBtn.Text = "✅ ส่งข้อมูลเรียบร้อย!"
+            task.wait(2)
+            SendWebhookBtn.Text = LanguageData[CurrentLanguage]["SendWebhook"]
         end
     end
 end)
 
 ----------------------------------------------------------------
--- [ 4. 🔴 ปุ่มย่อวงกลมลอยหน้าจอ (ใช้ Asset ID ของคุณ) ]
+-- [ 7. 🔴 ปุ่มย่อวงกลมลอยหน้าจอ + shortcut บนคีย์บอร์ด ]
 ----------------------------------------------------------------
 local ToggleBtn = Instance.new("ImageButton", ScreenGui)
 ToggleBtn.Name = "FloatingCircleButton"
 ToggleBtn.Size = UDim2.new(0, 55, 0, 55)
 ToggleBtn.Position = UDim2.new(0, 20, 0.5, -27)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-ToggleBtn.Image = LogoAsset -- ใส่ ID รูปโลโก้ของคุณตรงนี้
+ToggleBtn.Image = LogoAsset
 ToggleBtn.Active = true
-ToggleBtn.Draggable = true -- ลากย้ายตำแหน่งบนหน้าจอได้
+ToggleBtn.Draggable = true
 
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
 
@@ -196,4 +646,13 @@ CircleStroke.Thickness = 2.5
 
 ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- กดปุ่ม Insert หรือ Right Control บนแป้นพิมพ์เพื่อย่อ/เปิด
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed then
+        if input.KeyCode == Enum.KeyCode.Insert or input.KeyCode == Enum.KeyCode.RightControl then
+            MainFrame.Visible = not MainFrame.Visible
+        end
+    end
 end)
