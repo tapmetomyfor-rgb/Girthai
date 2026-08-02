@@ -1,4 +1,4 @@
--- [[ Thailand XVP - Rayfield Edition + Farm Menu ]] --
+-- [[ Thailand XVP - Rayfield Edition (With Boombox System) ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -88,15 +88,17 @@ local LanguageData = {
         FlySpeed = "ความเร็วบิน (ระดับ 1-10)",
         Jump = "โดดสูง (ระดับ 1-10)",
         Invis = "หายตัว (Invisible)",
+        BoomboxPlaceholder = "ใส่ Sound ID เสียง...",
+        PlayBoombox = "เปิดเพลง Boombox 📻",
         AutoParry = "ตีบอลออโต้ Blade Ball ⚡",
-        DeleteWalls = "ลบกำแพง (Delete WallL & WallR)",
+        DeleteWalls = "ลบกำแพง (แมพคีย์บอร์ด) 🧹",
+        DeleteBrainrotBarrier = "ลบบาเรีย (แมพขโมยเบรนร็อต) 🚫",
         ESP = "ESP สีตัวคน + ป้ายชื่อ",
         ESPColor = "สลับสี ESP (แดง/เขียว/ฟ้า/เหลือง)",
         Aimbot = "Aimbot ล็อคเป้าหมายกลางจอ",
+        AntiKick = "กันโดนเตะ / กันแบน (Anti-Kick) 🛡️",
         Potato = "ภาพดินน้ำมัน (Potato Graphics)",
-        FullBright = "เพิ่มแสง (FullBright)",
-        WebhookPlaceholder = "วางลิงก์ Discord Webhook...",
-        SendWebhook = "ส่งการแจ้งเตือน Webhook"
+        FullBright = "เพิ่มแสง (FullBright)"
     },
     ENG = {
         Tab1 = "Menu Xerox",
@@ -109,15 +111,17 @@ local LanguageData = {
         FlySpeed = "Fly Speed (Level 1-10)",
         Jump = "JumpPower (Level 1-10)",
         Invis = "Invisible",
+        BoomboxPlaceholder = "Enter Sound ID...",
+        PlayBoombox = "Play Boombox Audio 📻",
         AutoParry = "Auto Parry Blade Ball ⚡",
-        DeleteWalls = "Delete WallL & WallR",
+        DeleteWalls = "Delete Wall (Keyboard Map) 🧹",
+        DeleteBrainrotBarrier = "Delete Barrier (Brainrot Map) 🚫",
         ESP = "Player Body Color ESP + Name",
         ESPColor = "Change ESP Color",
         Aimbot = "Aimbot (Center Lock)",
+        AntiKick = "Anti-Kick / Anti-Ban Protection 🛡️",
         Potato = "Potato Graphics",
-        FullBright = "FullBright",
-        WebhookPlaceholder = "Paste Discord Webhook...",
-        SendWebhook = "Send Webhook Alert"
+        FullBright = "FullBright"
     }
 }
 
@@ -271,7 +275,7 @@ local function CreateSlider(parent, langKey, min, max, default, callback)
 end
 
 ----------------------------------------------------------------
--- [ 4. หมวดหมู่ที่ 1: Menu Xerox ]
+-- [ 4. หมวดหมู่ที่ 1: Menu Xerox (เพิ่มระบบ Boombox) ]
 ----------------------------------------------------------------
 local SpeedLevel = 1
 local NoclipEnabled = false
@@ -290,6 +294,62 @@ CreateToggle(Tab1, "Invis", false, function(v)
         for _, p in pairs(Character:GetDescendants()) do
             if p:IsA("BasePart") or p:IsA("Decal") then p.Transparency = v and 1 or 0 end
         end
+    end
+end)
+
+-- 📻 ช่องใส่ Sound ID + ปุ่มเล่นเพลง Boombox
+local SoundIdBox = Instance.new("TextBox", Tab1)
+SoundIdBox.Size = UDim2.new(1, -10, 0, 36)
+SoundIdBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+SoundIdBox.PlaceholderText = LanguageData[CurrentLanguage]["BoomboxPlaceholder"]
+SoundIdBox.Text = ""
+SoundIdBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SoundIdBox.Font = Enum.Font.Gotham
+SoundIdBox.TextSize = 12
+Instance.new("UICorner", SoundIdBox).CornerRadius = UDim.new(0, 5)
+local SoundIdBoxStroke = Instance.new("UIStroke", SoundIdBox)
+SoundIdBoxStroke.Color = Color3.fromRGB(35, 35, 35)
+
+local PlayBoomboxBtn = Instance.new("TextButton", Tab1)
+PlayBoomboxBtn.Size = UDim2.new(1, -10, 0, 36)
+PlayBoomboxBtn.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+PlayBoomboxBtn.Text = LanguageData[CurrentLanguage]["PlayBoombox"]
+PlayBoomboxBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayBoomboxBtn.Font = Enum.Font.GothamBold
+PlayBoomboxBtn.TextSize = 12
+Instance.new("UICorner", PlayBoomboxBtn).CornerRadius = UDim.new(0, 5)
+
+TextObjects[SoundIdBox] = function() SoundIdBox.PlaceholderText = LanguageData[CurrentLanguage]["BoomboxPlaceholder"] end
+TextObjects[PlayBoomboxBtn] = function() PlayBoomboxBtn.Text = LanguageData[CurrentLanguage]["PlayBoombox"] end
+
+PlayBoomboxBtn.MouseButton1Click:Connect(function()
+    local id = tonumber(SoundIdBox.Text)
+    if not id then return end
+    
+    -- ค้นหา Boombox ในกระเป๋าตัวละครเพื่อยิง Remote
+    local tool = Character:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
+    local playedOnServer = false
+    
+    if tool then
+        for _, obj in pairs(tool:GetDescendants()) do
+            if obj:IsA("RemoteEvent") then
+                pcall(function() obj:FireServer(id) end)
+                pcall(function() obj:FireServer("PlaySong", id) end)
+                playedOnServer = true
+            end
+        end
+    end
+    
+    -- หากในตัวไม่มี Boombox ของเกม ให้สร้างเสียง Client-side สำรอง
+    if not playedOnServer and Character and Character:FindFirstChild("HumanoidRootPart") then
+        local sound = Character.HumanoidRootPart:FindFirstChild("LocalBoomboxSound")
+        if not sound then
+            sound = Instance.new("Sound", Character.HumanoidRootPart)
+            sound.Name = "LocalBoomboxSound"
+        end
+        sound.SoundId = "rbxassetid://" .. tostring(id)
+        sound.Volume = 2
+        sound:Play()
     end
 end)
 
@@ -379,34 +439,126 @@ CreateToggle(Tab2, "Aimbot", false, function(v)
 end)
 
 ----------------------------------------------------------------
--- [ 6. 🌾 หมวดหมู่ที่ 3: เมนูฟาร์มทั้งหมด (All Farm Menu) ]
+-- [ 6. หมวดหมู่ที่ 3: เมนูฟาร์มทั้งหมด ]
 ----------------------------------------------------------------
 local DeleteWallsEnabled = false
+local DeleteBrainrotBarrierEnabled = false
 
--- ปุ่มสั่งลบ WallL และ WallR
+local function RemoveTargetWalls()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "WallL" or v.Name == "WallR" then
+            v:Destroy()
+        end
+    end
+end
+
 CreateToggle(TabFarm, "DeleteWalls", false, function(v)
     DeleteWallsEnabled = v
-    if v then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj.Name == "WallL" or obj.Name == "WallR" then
-                obj:Destroy()
+    if v then RemoveTargetWalls() end
+end)
+
+local function RemoveBrainrotBarriers()
+    for _, v in pairs(workspace:GetDescendants()) do
+        local nameLower = string.lower(v.Name)
+        if nameLower:find("barrier") or nameLower:find("door") or nameLower == "wall" or v.Name == "DeliveryHitbox" then
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+                v.Transparency = 1
+            elseif v:IsA("Model") then
+                v:Destroy()
             end
         end
     end
+end
+
+CreateToggle(TabFarm, "DeleteBrainrotBarrier", false, function(v)
+    DeleteBrainrotBarrierEnabled = v
+    if v then RemoveBrainrotBarriers() end
 end)
 
--- ลูปตรวจสอบป้องกันกรณีที่กำแพงถูกเสกขึ้นมาใหม่
-workspace.DescendantAdded:Connect(function(obj)
-    if DeleteWallsEnabled then
-        if obj.Name == "WallL" or obj.Name == "WallR" then
-            task.wait()
-            obj:Destroy()
-        end
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        if DeleteWallsEnabled then RemoveTargetWalls() end
+        if DeleteBrainrotBarrierEnabled then RemoveBrainrotBarriers() end
     end
 end)
 
 ----------------------------------------------------------------
--- [ 7. Auto Parry & Render Loops ]
+-- [ 7. หมวดหมู่ที่ 4: Setting Xerox ]
+----------------------------------------------------------------
+local AntiKickEnabled = false
+local OldNamecall = nil
+
+local function EnableAntiKick()
+    if OldNamecall then return end
+    
+    local rawMetatable = getrawmetatable or debug.getmetatable
+    local setReadOnly = setreadonly or make_writeable
+    
+    if rawMetatable and setReadOnly then
+        local gmt = rawMetatable(game)
+        OldNamecall = gmt.__namecall
+        setReadOnly(gmt, false)
+
+        gmt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if AntiKickEnabled and string.lower(method) == "kick" then
+                warn("[Thailand XVP] Blocked a kick/ban attempt!")
+                return nil
+            end
+            return OldNamecall(self, ...)
+        end)
+        setReadOnly(gmt, true)
+    end
+
+    local oldKick
+    oldKick = hookfunction(LocalPlayer.Kick, newcclosure(function(self, ...)
+        if AntiKickEnabled then
+            warn("[Thailand XVP] Prevented LocalPlayer:Kick()")
+            return nil
+        end
+        return oldKick(self, ...)
+    end))
+end
+
+CreateToggle(Tab3, "AntiKick", false, function(v)
+    AntiKickEnabled = v
+    if v then pcall(EnableAntiKick) end
+end)
+
+CreateToggle(Tab3, "Potato", false, function(v)
+    if v then
+        for _, p in pairs(workspace:GetDescendants()) do
+            if p:IsA("BasePart") then p.Material = Enum.Material.SmoothPlastic end
+        end
+    end
+end)
+
+local LangBtn = Instance.new("TextButton", Tab3)
+LangBtn.Size = UDim2.new(1, -10, 0, 36)
+LangBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+LangBtn.Text = "เปลี่ยนภาษา (Language): 🇹🇭 TH"
+LangBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
+LangBtn.Font = Enum.Font.Gotham
+LangBtn.TextSize = 12
+Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 5)
+local LangBtnStroke = Instance.new("UIStroke", LangBtn)
+LangBtnStroke.Color = Color3.fromRGB(35, 35, 35)
+
+LangBtn.MouseButton1Click:Connect(function()
+    CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
+    LangBtn.Text = "เปลี่ยนภาษา (Language): " .. ((CurrentLanguage == "TH") and "🇹🇭 TH" or "🇬🇧 ENG")
+    for _, func in pairs(TextObjects) do func() end
+end)
+
+CreateToggle(Tab3, "FullBright", false, function(v)
+    Lighting.Brightness = v and 2 or 1
+    Lighting.GlobalShadows = not v
+end)
+
+----------------------------------------------------------------
+-- [ 8. Auto Parry & Render Loops ]
 ----------------------------------------------------------------
 local function ParryBall()
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
@@ -516,39 +668,6 @@ RunService.RenderStepped:Connect(function()
     if AimbotEnabled and nearestPlr and nearestPlr.Character and nearestPlr.Character:FindFirstChild("Head") then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestPlr.Character.Head.Position)
     end
-end)
-
-----------------------------------------------------------------
--- [ 8. หมวดหมู่ที่ 4: Setting Xerox ]
-----------------------------------------------------------------
-CreateToggle(Tab3, "Potato", false, function(v)
-    if v then
-        for _, p in pairs(workspace:GetDescendants()) do
-            if p:IsA("BasePart") then p.Material = Enum.Material.SmoothPlastic end
-        end
-    end
-end)
-
-local LangBtn = Instance.new("TextButton", Tab3)
-LangBtn.Size = UDim2.new(1, -10, 0, 36)
-LangBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-LangBtn.Text = "เปลี่ยนภาษา (Language): 🇹🇭 TH"
-LangBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
-LangBtn.Font = Enum.Font.Gotham
-LangBtn.TextSize = 12
-Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 5)
-local LangBtnStroke = Instance.new("UIStroke", LangBtn)
-LangBtnStroke.Color = Color3.fromRGB(35, 35, 35)
-
-LangBtn.MouseButton1Click:Connect(function()
-    CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
-    LangBtn.Text = "เปลี่ยนภาษา (Language): " .. ((CurrentLanguage == "TH") and "🇹🇭 TH" or "🇬🇧 ENG")
-    for _, func in pairs(TextObjects) do func() end
-end)
-
-CreateToggle(Tab3, "FullBright", false, function(v)
-    Lighting.Brightness = v and 2 or 1
-    Lighting.GlobalShadows = not v
 end)
 
 ----------------------------------------------------------------
