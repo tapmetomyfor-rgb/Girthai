@@ -1,4 +1,4 @@
--- [[ Thailand XVP - Blade Ball Auto Parry Edition ]] --
+-- [[ Thailand XVP - Rayfield Edition + Farm Menu ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -13,64 +13,74 @@ local Mouse = LocalPlayer:GetMouse()
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 LocalPlayer.CharacterAdded:Connect(function(c) Character = c end)
 
--- 🖼️ Asset ID โลโก้ของคุณ
 local LogoAsset = "rbxassetid://94715455570142"
 
 ----------------------------------------------------------------
--- [ 1. ScreenGui & Main Frame ]
+-- [ 1. ScreenGui & Rayfield-Style Main Frame ]
 ----------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ThailandXVP_BladeBall_Gui"
+ScreenGui.Name = "ThailandXVP_Rayfield_Gui"
 pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 520, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -180)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.Size = UDim2.new(0, 540, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -270, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(21, 21, 21)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
--- Header Logo
-local HeaderLogo = Instance.new("ImageLabel", MainFrame)
-HeaderLogo.Size = UDim2.new(0, 30, 0, 30)
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(40, 40, 40)
+MainStroke.Thickness = 1.5
+
+-- Top Header
+local TopBar = Instance.new("Frame", MainFrame)
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
+
+local HeaderLogo = Instance.new("ImageLabel", TopBar)
+HeaderLogo.Size = UDim2.new(0, 24, 0, 24)
 HeaderLogo.Position = UDim2.new(0, 12, 0, 8)
 HeaderLogo.BackgroundTransparency = 1
 HeaderLogo.Image = LogoAsset
 
-local TitleBar = Instance.new("TextLabel", MainFrame)
-TitleBar.Size = UDim2.new(1, -60, 0, 40)
-TitleBar.Position = UDim2.new(0, 48, 0, 0)
-TitleBar.Text = "Thailand XVP"
-TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleBar.TextSize = 18
-TitleBar.Font = Enum.Font.SourceSansBold
+local TitleBar = Instance.new("TextLabel", TopBar)
+TitleBar.Size = UDim2.new(1, -50, 1, 0)
+TitleBar.Position = UDim2.new(0, 44, 0, 0)
+TitleBar.Text = "Thailand XVP  |  Rayfield Interface"
+TitleBar.TextColor3 = Color3.fromRGB(235, 235, 235)
+TitleBar.TextSize = 14
+TitleBar.Font = Enum.Font.GothamBold
 TitleBar.TextXAlignment = Enum.TextXAlignment.Left
 TitleBar.BackgroundTransparency = 1
 
 local Sidebar = Instance.new("Frame", MainFrame)
-Sidebar.Size = UDim2.new(0, 135, 1, -50)
-Sidebar.Position = UDim2.new(0, 10, 0, 42)
-Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+Sidebar.Size = UDim2.new(0, 150, 1, -45)
+Sidebar.Position = UDim2.new(0, 8, 0, 42)
+Sidebar.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 Sidebar.BorderSizePixel = 0
-Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 6)
 
 local PageContainer = Instance.new("Frame", MainFrame)
-PageContainer.Size = UDim2.new(1, -165, 1, -50)
-PageContainer.Position = UDim2.new(0, 155, 0, 42)
+PageContainer.Size = UDim2.new(1, -172, 1, -50)
+PageContainer.Position = UDim2.new(0, 164, 0, 44)
 PageContainer.BackgroundTransparency = 1
 
 ----------------------------------------------------------------
--- [ 2. Language & Tabs ]
+-- [ 2. Language & Tabs Structure ]
 ----------------------------------------------------------------
 local CurrentLanguage = "TH"
 local LanguageData = {
     TH = {
         Tab1 = "Menu Xerox",
         Tab2 = "PVP Xerox VP",
+        TabFarm = "เมนูฟาร์มทั้งหมด",
         Tab3 = "Setting Xerox",
         Speed = "วิ่งเร็ว (ระดับ 1-10)",
         Noclip = "ทะลุกำแพง (Noclip)",
@@ -79,6 +89,7 @@ local LanguageData = {
         Jump = "โดดสูง (ระดับ 1-10)",
         Invis = "หายตัว (Invisible)",
         AutoParry = "ตีบอลออโต้ Blade Ball ⚡",
+        DeleteWalls = "ลบกำแพง (Delete WallL & WallR)",
         ESP = "ESP สีตัวคน + ป้ายชื่อ",
         ESPColor = "สลับสี ESP (แดง/เขียว/ฟ้า/เหลือง)",
         Aimbot = "Aimbot ล็อคเป้าหมายกลางจอ",
@@ -90,6 +101,7 @@ local LanguageData = {
     ENG = {
         Tab1 = "Menu Xerox",
         Tab2 = "PVP Xerox VP",
+        TabFarm = "All Farm Menu",
         Tab3 = "Setting Xerox",
         Speed = "WalkSpeed (Level 1-10)",
         Noclip = "Noclip",
@@ -98,6 +110,7 @@ local LanguageData = {
         Jump = "JumpPower (Level 1-10)",
         Invis = "Invisible",
         AutoParry = "Auto Parry Blade Ball ⚡",
+        DeleteWalls = "Delete WallL & WallR",
         ESP = "Player Body Color ESP + Name",
         ESPColor = "Change ESP Color",
         Aimbot = "Aimbot (Center Lock)",
@@ -118,31 +131,32 @@ local function CreateTab(tabKey, order)
     Page.Size = UDim2.new(1, 0, 1, 0)
     Page.BackgroundTransparency = 1
     Page.BorderSizePixel = 0
-    Page.ScrollBarThickness = 3
+    Page.ScrollBarThickness = 2
+    Page.ScrollBarImageColor3 = Color3.fromRGB(255, 85, 0)
     Page.Visible = (order == 1)
     
     local UIList = Instance.new("UIListLayout", Page)
     UIList.SortOrder = Enum.SortOrder.LayoutOrder
-    UIList.Padding = UDim.new(0, 8)
+    UIList.Padding = UDim.new(0, 6)
     
     Pages[tabKey] = Page
 
     local TabBtn = Instance.new("TextButton", Sidebar)
-    TabBtn.Size = UDim2.new(1, -10, 0, 35)
-    TabBtn.Position = UDim2.new(0, 5, 0, (order - 1) * 40 + 5)
-    TabBtn.BackgroundColor3 = (order == 1) and Color3.fromRGB(35, 35, 45) or Color3.fromRGB(22, 22, 28)
-    TabBtn.Text = LanguageData[CurrentLanguage][tabKey]
+    TabBtn.Size = UDim2.new(1, -10, 0, 32)
+    TabBtn.Position = UDim2.new(0, 5, 0, (order - 1) * 36 + 6)
+    TabBtn.BackgroundColor3 = (order == 1) and Color3.fromRGB(255, 85, 0) or Color3.fromRGB(24, 24, 24)
+    TabBtn.Text = LanguageData[CurrentLanguage][tabKey] or tabKey
     TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabBtn.Font = Enum.Font.SourceSansBold
-    TabBtn.TextSize = 13
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
+    TabBtn.Font = Enum.Font.GothamMedium
+    TabBtn.TextSize = 12
+    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 5)
 
-    TextObjects[TabBtn] = function() TabBtn.Text = LanguageData[CurrentLanguage][tabKey] end
+    TextObjects[TabBtn] = function() TabBtn.Text = LanguageData[CurrentLanguage][tabKey] or tabKey end
 
     TabBtn.MouseButton1Click:Connect(function()
         for name, p in pairs(Pages) do p.Visible = (name == tabKey) end
-        for _, b in pairs(TabButtons) do b.BackgroundColor3 = Color3.fromRGB(22, 22, 28) end
-        TabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        for _, b in pairs(TabButtons) do b.BackgroundColor3 = Color3.fromRGB(24, 24, 24) end
+        TabBtn.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
     end)
 
     table.insert(TabButtons, TabBtn)
@@ -151,57 +165,71 @@ end
 
 local Tab1 = CreateTab("Tab1", 1)
 local Tab2 = CreateTab("Tab2", 2)
-local Tab3 = CreateTab("Tab3", 3)
+local TabFarm = CreateTab("TabFarm", 3)
+local Tab3 = CreateTab("Tab3", 4)
 
 ----------------------------------------------------------------
--- [ 3. UI Elements Builder ]
+-- [ 3. Rayfield UI Components Builder ]
 ----------------------------------------------------------------
 local function CreateToggle(parent, langKey, default, callback)
     local Frame = Instance.new("Frame", parent)
-    Frame.Size = UDim2.new(1, -10, 0, 35)
-    Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+    Frame.Size = UDim2.new(1, -10, 0, 36)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
+
+    local Stroke = Instance.new("UIStroke", Frame)
+    Stroke.Color = Color3.fromRGB(35, 35, 35)
 
     local Label = Instance.new("TextLabel", Frame)
     Label.Size = UDim2.new(1, -50, 1, 0)
     Label.Position = UDim2.new(0, 10, 0, 0)
     Label.Text = LanguageData[CurrentLanguage][langKey] or langKey
-    Label.TextColor3 = Color3.fromRGB(220, 220, 220)
-    Label.Font = Enum.Font.SourceSans
-    Label.TextSize = 13
+    Label.TextColor3 = Color3.fromRGB(210, 210, 210)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.BackgroundTransparency = 1
 
     TextObjects[Label] = function() Label.Text = LanguageData[CurrentLanguage][langKey] or langKey end
 
     local Btn = Instance.new("TextButton", Frame)
-    Btn.Size = UDim2.new(0, 30, 0, 20)
-    Btn.Position = UDim2.new(1, -38, 0.5, -10)
+    Btn.Size = UDim2.new(0, 34, 0, 18)
+    Btn.Position = UDim2.new(1, -42, 0.5, -9)
     Btn.Text = ""
-    Btn.BackgroundColor3 = default and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(60, 60, 70)
+    Btn.BackgroundColor3 = default and Color3.fromRGB(255, 85, 0) or Color3.fromRGB(45, 45, 45)
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(1, 0)
+
+    local Dot = Instance.new("Frame", Btn)
+    Dot.Size = UDim2.new(0, 14, 0, 14)
+    Dot.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+    Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
 
     local state = default
     Btn.MouseButton1Click:Connect(function()
         state = not state
-        Btn.BackgroundColor3 = state and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(60, 60, 70)
+        Btn.BackgroundColor3 = state and Color3.fromRGB(255, 85, 0) or Color3.fromRGB(45, 45, 45)
+        Dot.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
         callback(state)
     end)
 end
 
 local function CreateSlider(parent, langKey, min, max, default, callback)
     local Frame = Instance.new("Frame", parent)
-    Frame.Size = UDim2.new(1, -10, 0, 45)
-    Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+    Frame.Size = UDim2.new(1, -10, 0, 46)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
+
+    local Stroke = Instance.new("UIStroke", Frame)
+    Stroke.Color = Color3.fromRGB(35, 35, 35)
 
     local Label = Instance.new("TextLabel", Frame)
     Label.Size = UDim2.new(1, -20, 0, 20)
-    Label.Position = UDim2.new(0, 10, 0, 2)
+    Label.Position = UDim2.new(0, 10, 0, 4)
     Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(default)
-    Label.TextColor3 = Color3.fromRGB(220, 220, 220)
-    Label.Font = Enum.Font.SourceSans
-    Label.TextSize = 13
+    Label.TextColor3 = Color3.fromRGB(210, 210, 210)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.BackgroundTransparency = 1
 
@@ -209,15 +237,15 @@ local function CreateSlider(parent, langKey, min, max, default, callback)
     TextObjects[Label] = function() Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(val) end
 
     local SliderBar = Instance.new("TextButton", Frame)
-    SliderBar.Size = UDim2.new(1, -20, 0, 8)
-    SliderBar.Position = UDim2.new(0, 10, 0, 28)
-    SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SliderBar.Size = UDim2.new(1, -20, 0, 6)
+    SliderBar.Position = UDim2.new(0, 10, 0, 30)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     SliderBar.Text = ""
     Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
 
     local Fill = Instance.new("Frame", SliderBar)
     Fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
-    Fill.BackgroundColor3 = Color3.fromRGB(255, 0, 50)
+    Fill.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
     Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
 
     local dragging = false
@@ -300,7 +328,7 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 ----------------------------------------------------------------
--- [ 5. หมวดหมู่ที่ 2: PVP Xerox VP + ⚡ BLADE BALL AUTO PARRY ]
+-- [ 5. หมวดหมู่ที่ 2: PVP Xerox VP ]
 ----------------------------------------------------------------
 local AutoParryEnabled = false
 local ESPEnabled = false
@@ -308,7 +336,6 @@ local ESPColors = {Color3.fromRGB(255,0,0), Color3.fromRGB(0,255,0), Color3.from
 local CurrentESPColorIdx = 1
 local AimbotEnabled = false
 
--- 🎯 Crosshair FOV Circle
 local AimCircle = Instance.new("Frame", ScreenGui)
 AimCircle.Name = "AimbotFOV_Circle"
 AimCircle.Size = UDim2.new(0, 120, 0, 120)
@@ -317,33 +344,31 @@ AimCircle.BackgroundTransparency = 1
 AimCircle.Visible = false
 
 local AimStroke = Instance.new("UIStroke", AimCircle)
-AimStroke.Color = Color3.fromRGB(255, 0, 50)
+AimStroke.Color = Color3.fromRGB(255, 85, 0)
 AimStroke.Thickness = 2
 
 local AimDot = Instance.new("Frame", AimCircle)
 AimDot.Size = UDim2.new(0, 6, 0, 6)
 AimDot.Position = UDim2.new(0.5, -3, 0.5, -3)
-AimDot.BackgroundColor3 = Color3.fromRGB(255, 0, 50)
+AimDot.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
 Instance.new("UICorner", AimDot).CornerRadius = UDim.new(1, 0)
 Instance.new("UICorner", AimCircle).CornerRadius = UDim.new(1, 0)
 
--- ปุ่มเปิด Auto Parry
-CreateToggle(Tab2, "AutoParry", false, function(v) 
-    AutoParryEnabled = v 
-end)
-
+CreateToggle(Tab2, "AutoParry", false, function(v) AutoParryEnabled = v end)
 CreateToggle(Tab2, "ESP", false, function(v) ESPEnabled = v end)
 
 local ColorBtn = Instance.new("TextButton", Tab2)
-ColorBtn.Size = UDim2.new(1, -10, 0, 35)
-ColorBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+ColorBtn.Size = UDim2.new(1, -10, 0, 36)
+ColorBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"]
-ColorBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ColorBtn.Font = Enum.Font.SourceSans
-ColorBtn.TextSize = 13
-Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 6)
-TextObjects[ColorBtn] = function() ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"] end
+ColorBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
+ColorBtn.Font = Enum.Font.Gotham
+ColorBtn.TextSize = 12
+Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 5)
+local ColorBtnStroke = Instance.new("UIStroke", ColorBtn)
+ColorBtnStroke.Color = Color3.fromRGB(35, 35, 35)
 
+TextObjects[ColorBtn] = function() ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"] end
 ColorBtn.MouseButton1Click:Connect(function()
     CurrentESPColorIdx = (CurrentESPColorIdx % #ESPColors) + 1
 end)
@@ -353,84 +378,41 @@ CreateToggle(Tab2, "Aimbot", false, function(v)
     AimCircle.Visible = v
 end)
 
--- ระบบวาร์ป & ดึงผู้เล่น
-local PlayerSelectFrame = Instance.new("Frame", Tab2)
-PlayerSelectFrame.Size = UDim2.new(1, -10, 0, 80)
-PlayerSelectFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-Instance.new("UICorner", PlayerSelectFrame).CornerRadius = UDim.new(0, 6)
+----------------------------------------------------------------
+-- [ 6. 🌾 หมวดหมู่ที่ 3: เมนูฟาร์มทั้งหมด (All Farm Menu) ]
+----------------------------------------------------------------
+local DeleteWallsEnabled = false
 
-local SelectedPlayer = nil
-
-local PlrDropdown = Instance.new("TextButton", PlayerSelectFrame)
-PlrDropdown.Size = UDim2.new(1, -20, 0, 30)
-PlrDropdown.Position = UDim2.new(0, 10, 0, 8)
-PlrDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-PlrDropdown.Text = "เลือกผู้เล่น (Select Player)..."
-PlrDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-PlrDropdown.Font = Enum.Font.SourceSans
-PlrDropdown.TextSize = 13
-Instance.new("UICorner", PlrDropdown).CornerRadius = UDim.new(0, 4)
-
-PlrDropdown.MouseButton1Click:Connect(function()
-    local plrs = Players:GetPlayers()
-    for _, p in ipairs(plrs) do
-        if p ~= LocalPlayer then
-            SelectedPlayer = p
-            PlrDropdown.Text = "เลือกแล้ว: " .. p.DisplayName
-            break
+-- ปุ่มสั่งลบ WallL และ WallR
+CreateToggle(TabFarm, "DeleteWalls", false, function(v)
+    DeleteWallsEnabled = v
+    if v then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == "WallL" or obj.Name == "WallR" then
+                obj:Destroy()
+            end
         end
     end
 end)
 
-local TpToBtn = Instance.new("TextButton", PlayerSelectFrame)
-TpToBtn.Size = UDim2.new(0.48, 0, 0, 28)
-TpToBtn.Position = UDim2.new(0, 10, 0, 44)
-TpToBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-TpToBtn.Text = "วาร์ปไปหา (TP To)"
-TpToBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TpToBtn.Font = Enum.Font.SourceSans
-TpToBtn.TextSize = 12
-Instance.new("UICorner", TpToBtn).CornerRadius = UDim.new(0, 4)
-
-TpToBtn.MouseButton1Click:Connect(function()
-    if SelectedPlayer and SelectedPlayer.Character and SelectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        if Character and Character:FindFirstChild("HumanoidRootPart") then
-            Character.HumanoidRootPart.CFrame = SelectedPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-        end
-    end
-end)
-
-local BringBtn = Instance.new("TextButton", PlayerSelectFrame)
-BringBtn.Size = UDim2.new(0.48, 0, 0, 28)
-BringBtn.Position = UDim2.new(0.52, -10, 0, 44)
-BringBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-BringBtn.Text = "ดึงมาหา (Bring)"
-BringBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-BringBtn.Font = Enum.Font.SourceSans
-BringBtn.TextSize = 12
-Instance.new("UICorner", BringBtn).CornerRadius = UDim.new(0, 4)
-
-BringBtn.MouseButton1Click:Connect(function()
-    if SelectedPlayer and SelectedPlayer.Character and SelectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        if Character and Character:FindFirstChild("HumanoidRootPart") then
-            local myPos = Character.HumanoidRootPart.CFrame
-            Character.HumanoidRootPart.CFrame = SelectedPlayer.Character.HumanoidRootPart.CFrame
-            task.wait(0.1)
-            Character.HumanoidRootPart.CFrame = myPos
+-- ลูปตรวจสอบป้องกันกรณีที่กำแพงถูกเสกขึ้นมาใหม่
+workspace.DescendantAdded:Connect(function(obj)
+    if DeleteWallsEnabled then
+        if obj.Name == "WallL" or obj.Name == "WallR" then
+            task.wait()
+            obj:Destroy()
         end
     end
 end)
 
 ----------------------------------------------------------------
--- ⚡ [ ระบบ Auto Parry ของ Blade Ball คำนวณความเร็วบอล ]
+-- [ 7. Auto Parry & Render Loops ]
 ----------------------------------------------------------------
 local function ParryBall()
-    -- จำลองการกดปุ่ม 'F'
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
     task.wait(0.01)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 
-    -- สั่งยิง Remote เผื่อเกมบางอัปเดตล็อค KeyInput
     pcall(function()
         local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") or game:GetService("ReplicatedStorage")
         if remotes:FindFirstChild("ParryButtonPress") then
@@ -453,11 +435,8 @@ RunService.PreRender:Connect(function()
             local ball = obj
             local distance = (ball.Position - hrp.Position).Magnitude
             local velocity = ball.Velocity.Magnitude
-            
-            -- คำนวณระยะที่ต้องปัดบอลตามความเร็วบอลจริง (Dynamic Parry Distance)
             local parryDistance = math.clamp(velocity * 0.55, 15, 65)
 
-            -- ตรวจสอบว่าลูกบอลกำลังพุ่งมาหาตัวเราหรือไม่
             local isTargetingMe = false
             if ball:FindFirstChild("Target") and ball.Target.Value == LocalPlayer.Name then
                 isTargetingMe = true
@@ -465,7 +444,6 @@ RunService.PreRender:Connect(function()
                 isTargetingMe = true
             end
 
-            -- ถ้าบอลพุ่งมาหา และอยู่ในระยะ -> สั่งตีบอลทันที!
             if isTargetingMe and distance <= parryDistance then
                 ParryBall()
                 break
@@ -474,7 +452,6 @@ RunService.PreRender:Connect(function()
     end
 end)
 
--- 🔴 Render Loop สำหรับ ESP & Aimbot
 RunService.RenderStepped:Connect(function()
     local nearestPlr = nil
     local shortestDist = 60
@@ -508,8 +485,8 @@ RunService.RenderStepped:Connect(function()
                     txt.Size = UDim2.new(1, 0, 1, 0)
                     txt.BackgroundTransparency = 1
                     txt.Text = plr.DisplayName
-                    txt.Font = Enum.Font.SourceSansBold
-                    txt.TextSize = 14
+                    txt.Font = Enum.Font.GothamBold
+                    txt.TextSize = 13
                     txt.TextStrokeTransparency = 0
                 end
                 if bbGui and bbGui:FindFirstChildOfClass("TextLabel") then
@@ -542,7 +519,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 ----------------------------------------------------------------
--- [ 6. หมวดหมู่ที่ 3: Setting Xerox ]
+-- [ 8. หมวดหมู่ที่ 4: Setting Xerox ]
 ----------------------------------------------------------------
 CreateToggle(Tab3, "Potato", false, function(v)
     if v then
@@ -553,13 +530,15 @@ CreateToggle(Tab3, "Potato", false, function(v)
 end)
 
 local LangBtn = Instance.new("TextButton", Tab3)
-LangBtn.Size = UDim2.new(1, -10, 0, 35)
-LangBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+LangBtn.Size = UDim2.new(1, -10, 0, 36)
+LangBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 LangBtn.Text = "เปลี่ยนภาษา (Language): 🇹🇭 TH"
-LangBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-LangBtn.Font = Enum.Font.SourceSans
-LangBtn.TextSize = 13
-Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 6)
+LangBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
+LangBtn.Font = Enum.Font.Gotham
+LangBtn.TextSize = 12
+Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 5)
+local LangBtnStroke = Instance.new("UIStroke", LangBtn)
+LangBtnStroke.Color = Color3.fromRGB(35, 35, 35)
 
 LangBtn.MouseButton1Click:Connect(function()
     CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
@@ -572,68 +551,14 @@ CreateToggle(Tab3, "FullBright", false, function(v)
     Lighting.GlobalShadows = not v
 end)
 
--- Webhook
-local WebhookFrame = Instance.new("Frame", Tab3)
-WebhookFrame.Size = UDim2.new(1, -10, 0, 85)
-WebhookFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-Instance.new("UICorner", WebhookFrame).CornerRadius = UDim.new(0, 6)
-
-local WebhookInput = Instance.new("TextBox", WebhookFrame)
-WebhookInput.Size = UDim2.new(1, -20, 0, 30)
-WebhookInput.Position = UDim2.new(0, 10, 0, 8)
-WebhookInput.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-WebhookInput.PlaceholderText = LanguageData[CurrentLanguage]["WebhookPlaceholder"]
-WebhookInput.Text = ""
-WebhookInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-WebhookInput.Font = Enum.Font.SourceSans
-WebhookInput.TextSize = 11
-Instance.new("UICorner", WebhookInput).CornerRadius = UDim.new(0, 4)
-
-local SendWebhookBtn = Instance.new("TextButton", WebhookFrame)
-SendWebhookBtn.Size = UDim2.new(1, -20, 0, 30)
-SendWebhookBtn.Position = UDim2.new(0, 10, 0, 46)
-SendWebhookBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
-SendWebhookBtn.Text = LanguageData[CurrentLanguage]["SendWebhook"]
-SendWebhookBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SendWebhookBtn.Font = Enum.Font.SourceSansBold
-SendWebhookBtn.TextSize = 13
-Instance.new("UICorner", SendWebhookBtn).CornerRadius = UDim.new(0, 4)
-
-SendWebhookBtn.MouseButton1Click:Connect(function()
-    local url = WebhookInput.Text
-    if url ~= "" and (string.find(url, "discord.com/api/webhooks") or string.find(url, "discordapp.com/api/webhooks")) then
-        local data = {
-            ["content"] = "🚀 **Thailand XVP Loaded!**",
-            ["embeds"] = {{
-                ["title"] = "สคริปต์ Thailand XVP ถูกเปิดใช้งานแล้ว",
-                ["description"] = "ผู้เล่น: **" .. LocalPlayer.Name .. "** (" .. LocalPlayer.DisplayName .. ")\nGame ID: " .. game.PlaceId,
-                ["color"] = 16711730
-            }}
-        }
-        local json = HttpService:JSONEncode(data)
-        local requestFunc = syn and syn.request or http and http.request or request or http_request
-        if requestFunc then
-            requestFunc({
-                Url = url,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = json
-            })
-            SendWebhookBtn.Text = "✅ ส่งข้อมูลเรียบร้อย!"
-            task.wait(2)
-            SendWebhookBtn.Text = LanguageData[CurrentLanguage]["SendWebhook"]
-        end
-    end
-end)
-
 ----------------------------------------------------------------
--- [ 7. 🔴 ปุ่มย่อวงกลมลอยหน้าจอ + shortcut บนคีย์บอร์ด ]
+-- [ 9. ปุ่มวงกลมย่อเปิด/ปิด Rayfield Style Floating Button ]
 ----------------------------------------------------------------
 local ToggleBtn = Instance.new("ImageButton", ScreenGui)
-ToggleBtn.Name = "FloatingCircleButton"
-ToggleBtn.Size = UDim2.new(0, 55, 0, 55)
-ToggleBtn.Position = UDim2.new(0, 20, 0.5, -27)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+ToggleBtn.Name = "RayfieldFloatingButton"
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+ToggleBtn.Position = UDim2.new(0, 20, 0.5, -25)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 ToggleBtn.Image = LogoAsset
 ToggleBtn.Active = true
 ToggleBtn.Draggable = true
@@ -641,14 +566,13 @@ ToggleBtn.Draggable = true
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
 
 local CircleStroke = Instance.new("UIStroke", ToggleBtn)
-CircleStroke.Color = Color3.fromRGB(255, 0, 50)
-CircleStroke.Thickness = 2.5
+CircleStroke.Color = Color3.fromRGB(255, 85, 0)
+CircleStroke.Thickness = 2
 
 ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- กดปุ่ม Insert หรือ Right Control บนแป้นพิมพ์เพื่อย่อ/เปิด
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed then
         if input.KeyCode == Enum.KeyCode.Insert or input.KeyCode == Enum.KeyCode.RightControl then
