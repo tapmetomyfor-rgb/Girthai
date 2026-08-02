@@ -1,0 +1,279 @@
+-- [[ Thailand XVP Script - WindUI Fixed Version ]] --
+local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+
+-- [ 1. สร้าง Window ]
+local Window = WindUI:CreateWindow({
+    Title = "Thailand XVP",
+    Icon = "swords", -- ใช้ Lucide Icon เพื่อป้องกันการ Error จากรูปภาพ
+    Author = "by Thailand Team",
+    Folder = "ThailandXVPConfig",
+    Transparent = true
+})
+
+----------------------------------------------------------------
+-- [ ตัวแปรทำงาน ]
+----------------------------------------------------------------
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local NoclipEnabled = false
+local FlyEnabled = false
+local InvisibleEnabled = false
+local ESPEnabled = false
+local ESPColor = Color3.fromRGB(255, 0, 0)
+
+----------------------------------------------------------------
+-- [ หมวดหมู่ที่ 1: Menu Xerox ]
+----------------------------------------------------------------
+local Tab1 = Window:Tab({ Title = "Menu Xerox", Icon = "user" })
+
+Tab1:Slider({
+    Title = "วิ่งเร็วปรับระดับได้ (Speed Level 1-10)",
+    Min = 1,
+    Max = 10,
+    Default = 1,
+    Callback = function(Value)
+        local speed = 16 + (Value - 1) * 15
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = speed
+        end
+    end
+})
+
+Tab1:Toggle({
+    Title = "ทะลุกำแพง (Noclip)",
+    Default = false,
+    Callback = function(Value)
+        NoclipEnabled = Value
+    end
+})
+
+game:GetService("RunService").Stepped:Connect(function()
+    if NoclipEnabled and LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+Tab1:Toggle({
+    Title = "บินได้ (Fly)",
+    Default = false,
+    Callback = function(Value)
+        FlyEnabled = Value
+    end
+})
+
+Tab1:Slider({
+    Title = "ปรับความเร็วบิน (Fly Speed)",
+    Min = 10,
+    Max = 200,
+    Default = 50,
+    Callback = function(Value)
+    end
+})
+
+Tab1:Slider({
+    Title = "โดดสูงปรับระดับได้ (Jump Power)",
+    Min = 50,
+    Max = 300,
+    Default = 50,
+    Callback = function(Value)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.UseJumpPower = true
+            LocalPlayer.Character.Humanoid.JumpPower = Value
+        end
+    end
+})
+
+Tab1:Toggle({
+    Title = "หายตัวได้ (Invisible)",
+    Default = false,
+    Callback = function(Value)
+        InvisibleEnabled = Value
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") or part:IsA("Decal") then
+                    part.Transparency = InvisibleEnabled and 1 or 0
+                end
+            end
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- [ หมวดหมู่ที่ 2: PVP Xerox VP ]
+----------------------------------------------------------------
+local Tab2 = Window:Tab({ Title = "PVP Xerox VP", Icon = "swords" })
+
+Tab2:Toggle({
+    Title = "ตีบอลออโต้สำหรับแมพเบดบอล (Auto Parry)",
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+Tab2:Toggle({
+    Title = "ESP เห็นตัวคนและชื่อ",
+    Default = false,
+    Callback = function(Value)
+        ESPEnabled = Value
+    end
+})
+
+Tab2:Colorpicker({
+    Title = "เปลี่ยนสี ESP",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(Value)
+        ESPColor = Value
+    end
+})
+
+Tab2:Toggle({
+    Title = "Aimbot ล็อคผู้เล่นใกล้ๆ",
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+local function GetPlayerNames()
+    local list = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list, p.Name)
+        end
+    end
+    return list
+end
+
+local TargetWarpPlayer = ""
+local TargetPullPlayer = ""
+
+Tab2:Dropdown({
+    Title = "เลือกผู้เล่นที่จะวาร์ปไปหา",
+    Values = GetPlayerNames(),
+    Callback = function(Option)
+        TargetWarpPlayer = Option
+    end
+})
+
+Tab2:Button({
+    Title = "วาร์ปไปหาผู้เล่น (Warp)",
+    Callback = function()
+        if TargetWarpPlayer ~= "" and Players:FindFirstChild(TargetWarpPlayer) then
+            local targetChar = Players[TargetWarpPlayer].Character
+            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame
+            end
+        end
+    end
+})
+
+Tab2:Dropdown({
+    Title = "เลือกผู้เล่นที่จะดึงมาหา",
+    Values = GetPlayerNames(),
+    Callback = function(Option)
+        TargetPullPlayer = Option
+    end
+})
+
+Tab2:Button({
+    Title = "ดึงผู้เล่นมาหา (Pull)",
+    Callback = function()
+        if TargetPullPlayer ~= "" and Players:FindFirstChild(TargetPullPlayer) then
+            local targetChar = Players[TargetPullPlayer].Character
+            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+                targetChar.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
+            end
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- [ หมวดหมู่ที่ 3: Setting Xerox ]
+----------------------------------------------------------------
+local Tab3 = Window:Tab({ Title = "Setting Xerox", Icon = "settings" })
+
+Tab3:Toggle({
+    Title = "ภาพดินน้ำมัน (Potato Graphics)",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                end
+            end
+        end
+    end
+})
+
+local currentLang = "TH"
+Tab3:Button({
+    Title = "เปลี่ยนภาษา (ไทย / Eng)",
+    Callback = function()
+        if currentLang == "TH" then
+            currentLang = "ENG"
+            WindUI:Notify({ Title = "Language", Content = "Language changed to English", Duration = 2 })
+        else
+            currentLang = "TH"
+            WindUI:Notify({ Title = "ภาษา", Content = "เปลี่ยนเป็นภาษาไทยแล้ว", Duration = 2 })
+        end
+    end
+})
+
+Tab3:Toggle({
+    Title = "เพิ่มแสง (FullBright)",
+    Default = false,
+    Callback = function(Value)
+        local lighting = game:GetService("Lighting")
+        if Value then
+            lighting.Brightness = 2
+            lighting.ClockTime = 14
+            lighting.GlobalShadows = false
+        else
+            lighting.Brightness = 1
+            lighting.GlobalShadows = true
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- [ ปุ่มย่อหน้าต่างวงกลมเลื่อนได้ ]
+----------------------------------------------------------------
+local ToggleGui = Instance.new("ScreenGui")
+ToggleGui.Name = "ThailandXVP_Toggle"
+
+-- ดักจับการใส่ CoreGui เพื่อไม่ให้ค้างบนตัวรันบางรุ่น
+local success, _ = pcall(function()
+    ToggleGui.Parent = game:GetService("CoreGui")
+end)
+if not success then
+    ToggleGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local OpenBtn = Instance.new("TextButton", ToggleGui)
+local UICorner = Instance.new("UICorner", OpenBtn)
+
+OpenBtn.Size = UDim2.new(0, 50, 0, 50)
+OpenBtn.Position = UDim2.new(0, 10, 0.5, -25)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+OpenBtn.Text = "XVP"
+OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenBtn.TextSize = 16
+OpenBtn.Font = Enum.Font.SourceSansBold
+OpenBtn.Active = true
+OpenBtn.Draggable = true
+
+UICorner.CornerRadius = UDim.new(1, 0)
+
+OpenBtn.MouseButton1Click:Connect(function()
+    Window:Toggle()
+end)
+
+WindUI:Notify({
+    Title = "Thailand XVP",
+    Content = "โหลดสคริปต์สำเร็จ!",
+    Duration = 3
+})
