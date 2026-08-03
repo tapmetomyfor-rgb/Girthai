@@ -1,8 +1,9 @@
--- [[ Thailand XVP - Rayfield Edition (V6 - Curve Bullet & Shoot Button) ]] --
+-- [[ Thailand XVP - Rayfield Edition (V9 - Sound FX & Super Fling Fix) ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -14,6 +15,28 @@ LocalPlayer.CharacterAdded:Connect(function(c) Character = c end)
 local LogoAsset = "rbxassetid://94715455570142"
 
 ----------------------------------------------------------------
+-- [ 🔊 Sound System Setup ]
+----------------------------------------------------------------
+-- เล่นเสียงเมื่อรันสคริปต์ด้วย ID ที่ระบุ
+local InitSound = Instance.new("Sound")
+InitSound.Name = "XVP_InitSound"
+InitSound.SoundId = "rbxassetid://132948338000932"
+InitSound.Volume = 2
+InitSound.Parent = SoundService
+InitSound:Play()
+
+-- เสียงคลิกปุ่มทั่วไป
+local ClickSound = Instance.new("Sound")
+ClickSound.Name = "XVP_ClickSound"
+ClickSound.SoundId = "rbxassetid://6895079853" -- เสียง Click มาตรฐาน
+ClickSound.Volume = 0.5
+ClickSound.Parent = SoundService
+
+local function PlayClick()
+    ClickSound:Play()
+end
+
+----------------------------------------------------------------
 -- [ 1. ScreenGui & Main Frame ]
 ----------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
@@ -23,8 +46,8 @@ if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("Player
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 540, 0, 420)
-MainFrame.Position = UDim2.new(0.5, -270, 0.5, -210)
+MainFrame.Size = UDim2.new(0, 540, 0, 440)
+MainFrame.Position = UDim2.new(0.5, -270, 0.5, -220)
 MainFrame.BackgroundColor3 = Color3.fromRGB(21, 21, 21)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -51,7 +74,7 @@ HeaderLogo.Image = LogoAsset
 local TitleBar = Instance.new("TextLabel", TopBar)
 TitleBar.Size = UDim2.new(1, -50, 1, 0)
 TitleBar.Position = UDim2.new(0, 44, 0, 0)
-TitleBar.Text = "Thailand XVP  |  Rayfield (Curve Bullet Edition V6)"
+TitleBar.Text = "Thailand XVP  |  Rayfield (Sound FX & Super Fling V9)"
 TitleBar.TextColor3 = Color3.fromRGB(235, 235, 235)
 TitleBar.TextSize = 14
 TitleBar.Font = Enum.Font.GothamBold
@@ -89,11 +112,12 @@ local LanguageData = {
         AntiKick = "กันโดนเตะ / กันแบน (Anti-Kick) 🛡️",
         Potato = "ภาพดินน้ำมัน (เปิด/ปิด ได้)",
         FullBright = "เพิ่มแสง (FullBright)",
-        
-        -- Murder & Target
-        CurveBullet = "ยิงกระสุนโค้งใส่ฆาตกร 🌀",
+        BringGun = "ดึงปืนที่ตกมาหาตัว 🔫",
+        TpMurderer = "วาร์ปไปหาฆาตกร (ปกติ) 🔪",
+        TpSheriff = "วาร์ปไปหาตำรวจ (ปกติ) 👮",
+        CurveBullet = "ยิงกระสุนโค้งเข้าลำตัว 🌀",
         MurderESP = "ESP แยกบทบาท (ฆาตกร/ตำรวจ) 🎯",
-        AimLockMurder = "Aimbot ล็อคเป้าติดตามฆาตกร 🔪",
+        AimLockMurder = "Aimbot ล็อคลำตัวฆาตกร 🔪",
         SelectPlayer = "เลือกผู้เล่นเป้าหมาย:",
         TpToPlayer = "วาร์ปไปหาผู้เล่นที่เลือก 🚀",
         FlingPlayer = "ดีดผู้เล่นที่เลือกให้ปลิว 💥",
@@ -115,11 +139,12 @@ local LanguageData = {
         AntiKick = "Anti-Kick Protection 🛡️",
         Potato = "Potato Graphics (Toggle)",
         FullBright = "FullBright",
-        
-        -- Murder & Target
-        CurveBullet = "Curve Bullet to Murderer 🌀",
+        BringGun = "Bring Dropped Gun 🔫",
+        TpMurderer = "TP to Murderer (Normal) 🔪",
+        TpSheriff = "TP to Sheriff (Normal) 👮",
+        CurveBullet = "Curve Bullet to Body 🌀",
         MurderESP = "Role ESP (Murderer/Sheriff) 🎯",
-        AimLockMurder = "Aimbot Lock & Track Murderer 🔪",
+        AimLockMurder = "Aimbot Lock Body Murderer 🔪",
         SelectPlayer = "Select Target Player:",
         TpToPlayer = "TP to Selected Player 🚀",
         FlingPlayer = "Fling Selected Player 💥",
@@ -162,6 +187,7 @@ local function CreateTab(tabKey, order)
     TextObjects[TabBtn] = function() TabBtn.Text = LanguageData[CurrentLanguage][tabKey] or tabKey end
 
     TabBtn.MouseButton1Click:Connect(function()
+        PlayClick()
         for name, p in pairs(Pages) do p.Visible = (name == tabKey) end
         for _, b in pairs(TabButtons) do b.BackgroundColor3 = Color3.fromRGB(24, 24, 24) end
         TabBtn.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
@@ -216,6 +242,7 @@ local function CreateToggle(parent, langKey, default, callback)
 
     local state = default
     Btn.MouseButton1Click:Connect(function()
+        PlayClick()
         state = not state
         Btn.BackgroundColor3 = state and Color3.fromRGB(255, 85, 0) or Color3.fromRGB(45, 45, 45)
         Dot.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
@@ -292,11 +319,14 @@ local function CreateButton(parent, langKey, callback)
     Stroke.Color = Color3.fromRGB(35, 35, 35)
 
     TextObjects[Btn] = function() Btn.Text = LanguageData[CurrentLanguage][langKey] or langKey end
-    Btn.MouseButton1Click:Connect(callback)
+    Btn.MouseButton1Click:Connect(function()
+        PlayClick()
+        callback()
+    end)
 end
 
 ----------------------------------------------------------------
--- [ 4. Fling System ]
+-- [ 4. 🔥 Improved Super Fling Engine (แก้เรื่องดีดไม่ปลิว) ]
 ----------------------------------------------------------------
 local function RealFlingTarget(targetPlr)
     if not targetPlr or not targetPlr.Character or not targetPlr.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -305,22 +335,31 @@ local function RealFlingTarget(targetPlr)
     local myHrp = Character.HumanoidRootPart
     local targetHrp = targetPlr.Character.HumanoidRootPart
     local oldCFrame = myHrp.CFrame
+    
+    -- ปิด Collision ชั่วคราวเพื่อไม่ให้ตัวเราติด
+    for _, part in pairs(Character:GetChildren()) do
+        if part:IsA("BasePart") then part.CanCollide = false end
+    end
 
     local bav = Instance.new("BodyAngularVelocity")
     bav.Name = "XVP_FlingVelocity"
     bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    bav.AngularVelocity = Vector3.new(0, 999999, 0)
+    bav.AngularVelocity = Vector3.new(999999, 999999, 999999) -- ความเร็วหมุนระดับอัลติเมท
     bav.Parent = myHrp
 
     local startTime = tick()
     task.spawn(function()
-        while tick() - startTime < 1.5 do
+        while tick() - startTime < 2.0 do
             if not targetHrp or not targetHrp.Parent then break end
-            myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 0)
-            myHrp.Velocity = Vector3.new(0, 9999, 0)
+            
+            -- ปรับแรงเหวี่ยงอัดกระแทก
+            myHrp.AssemblyAngularVelocity = Vector3.new(999999, 999999, 999999)
+            myHrp.CFrame = targetHrp.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
             RunService.RenderStepped:Wait()
         end
+        
         bav:Destroy()
+        myHrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
         myHrp.Velocity = Vector3.new(0, 0, 0)
         myHrp.CFrame = oldCFrame
     end)
@@ -348,7 +387,7 @@ end)
 CreateToggle(Tab2, "ESP", false, function(v) ESPEnabled = v end)
 
 ----------------------------------------------------------------
--- [ 6. 🔪 Curve Bullet & Floating Shoot Button Engine ]
+-- [ 6. 🔪 Murder Xerox Functions ]
 ----------------------------------------------------------------
 local MurderESPEnabled = false
 local AimLockMurderEnabled = false
@@ -386,6 +425,18 @@ local function GetMurdererPlayer()
     return nil
 end
 
+local function GetSheriffPlayer()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local char = plr.Character
+            local backpack = plr:FindFirstChild("Backpack")
+            local hasGun = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("Revolver")))
+            if hasGun then return plr end
+        end
+    end
+    return nil
+end
+
 local function GetMurderRole(plr)
     if not plr or not plr.Character then return "Innocent" end
     local char = plr.Character
@@ -399,12 +450,13 @@ local function GetMurderRole(plr)
     return "Innocent"
 end
 
--- Curve Shoot Logic
 local function ShootMurdererCurve()
     local murderer = GetMurdererPlayer()
-    if not murderer or not murderer.Character or not murderer.Character:FindFirstChild("Head") then return end
+    if not murderer or not murderer.Character then return end
     
-    local targetHead = murderer.Character.Head
+    local targetBody = murderer.Character:FindFirstChild("HumanoidRootPart") or murderer.Character:FindFirstChild("UpperTorso")
+    if not targetBody then return end
+    
     local gun = Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
     
     if gun then
@@ -413,21 +465,14 @@ local function ShootMurdererCurve()
             task.wait(0.05)
         end
         
-        -- Hook Bullet Direction / Remote Shoot
         local shootRemote = gun:FindFirstChild("Shoot") or gun:FindFirstChild("KnifeServer") or game:GetService("ReplicatedStorage"):FindFirstChild("Shoot", true)
         
         if shootRemote and shootRemote:IsA("RemoteEvent") then
-            shootRemote:FireServer(targetHead.CFrame, targetHead.Position)
+            shootRemote:FireServer(targetBody.CFrame, targetBody.Position)
         else
-            -- Backup CFrame Bending Method
-            local origin = gun:FindFirstChild("Handle") and gun.Handle.Position or Character.HumanoidRootPart.Position
-            local direction = (targetHead.Position - origin).Unit
-            
-            -- Force Camera to Head momentarily for instant curve calculation
             local oldCam = Camera.CFrame
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
-            
-            if mouse1click then mouse1click() else tool:Activate() end
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetBody.Position)
+            if mouse1click then mouse1click() else gun:Activate() end
             task.wait(0.02)
             Camera.CFrame = oldCam
         end
@@ -435,10 +480,47 @@ local function ShootMurdererCurve()
 end
 
 ShootBtn.MouseButton1Click:Connect(function()
+    PlayClick()
     ShootMurdererCurve()
 end)
 
--- Toggles
+-- Buttons Setup
+CreateButton(TabMurder, "BringGun", function()
+    local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
+    if not gunDrop then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == "GunDrop" or obj.Name == "Gun" and obj:IsA("BasePart") or obj:IsA("Model") then
+                gunDrop = obj
+                break
+            end
+        end
+    end
+
+    if gunDrop and Character and Character:FindFirstChild("HumanoidRootPart") then
+        local targetPos = Character.HumanoidRootPart.CFrame * CFrame.new(0, -2, 0)
+        if gunDrop:IsA("Model") then gunDrop:SetPrimaryPartCFrame(targetPos)
+        elseif gunDrop:IsA("BasePart") then gunDrop.CFrame = targetPos end
+    end
+end)
+
+CreateButton(TabMurder, "TpMurderer", function()
+    local m = GetMurdererPlayer()
+    if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") then
+        if Character and Character:FindFirstChild("HumanoidRootPart") then
+            Character.HumanoidRootPart.CFrame = m.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        end
+    end
+end)
+
+CreateButton(TabMurder, "TpSheriff", function()
+    local s = GetSheriffPlayer()
+    if s and s.Character and s.Character:FindFirstChild("HumanoidRootPart") then
+        if Character and Character:FindFirstChild("HumanoidRootPart") then
+            Character.HumanoidRootPart.CFrame = s.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        end
+    end
+end)
+
 CreateToggle(TabMurder, "CurveBullet", false, function(v)
     CurveBulletEnabled = v
     ShootBtn.Visible = v
@@ -475,6 +557,7 @@ DropBtn.TextSize = 10
 Instance.new("UICorner", DropBtn).CornerRadius = UDim.new(0, 4)
 
 DropBtn.MouseButton1Click:Connect(function()
+    PlayClick()
     local allPlrs = {}
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then table.insert(allPlrs, p) end
@@ -508,12 +591,8 @@ CreateButton(TabMurder, "FlingMurder", function()
 end)
 
 CreateButton(TabMurder, "FlingSheriff", function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and GetMurderRole(p) == "Sheriff" then
-            RealFlingTarget(p)
-            break
-        end
-    end
+    local s = GetSheriffPlayer()
+    if s then RealFlingTarget(s) end
 end)
 
 ----------------------------------------------------------------
@@ -564,6 +643,7 @@ LangBtn.TextSize = 12
 Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 5)
 
 LangBtn.MouseButton1Click:Connect(function()
+    PlayClick()
     CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
     LangBtn.Text = LanguageData[CurrentLanguage]["ChangeLang"]
     for _, func in pairs(TextObjects) do func() end
@@ -591,10 +671,9 @@ CreateToggle(Tab3, "FullBright", false, function(v)
 end)
 
 ----------------------------------------------------------------
--- [ 8. Smooth Camera & Loop Render ]
+-- [ 8. Render Loops & Smooth Aim ]
 ----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
-    -- Character Speed & Jump
     if Character and Character:FindFirstChild("Humanoid") then
         local hum = Character.Humanoid
         hum.WalkSpeed = 16 + (SpeedLevel - 1) * 12
@@ -602,14 +681,12 @@ RunService.RenderStepped:Connect(function()
         hum.JumpPower = 50 + (JumpLevel - 1) * 20
     end
 
-    -- Noclip
     if NoclipEnabled and Character then
         for _, p in pairs(Character:GetDescendants()) do
             if p:IsA("BasePart") then p.CanCollide = false end
         end
     end
 
-    -- ESP & Murder ESP
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
@@ -636,17 +713,19 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Smooth Lock Murderer
     if AimLockMurderEnabled then
         local m = GetMurdererPlayer()
-        if m and m.Character and m.Character:FindFirstChild("Head") then
-            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, m.Character.Head.Position), 0.25)
+        if m and m.Character then
+            local bodyPart = m.Character:FindFirstChild("HumanoidRootPart") or m.Character:FindFirstChild("UpperTorso")
+            if bodyPart then
+                Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, bodyPart.Position), 0.25)
+            end
         end
     end
 end)
 
 ----------------------------------------------------------------
--- [ 9. Floating UI Button ]
+-- [ 9. Floating Button ]
 ----------------------------------------------------------------
 local ToggleBtn = Instance.new("ImageButton", ScreenGui)
 ToggleBtn.Name = "RayfieldFloatingButton"
@@ -663,5 +742,6 @@ CircleStroke.Color = Color3.fromRGB(255, 85, 0)
 CircleStroke.Thickness = 2
 
 ToggleBtn.MouseButton1Click:Connect(function()
+    PlayClick()
     MainFrame.Visible = not MainFrame.Visible
 end)
