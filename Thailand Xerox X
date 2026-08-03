@@ -1,770 +1,207 @@
--- [[ Thailand XVP - Rayfield Edition (V11 - Kill Aura Moved to Murder Tab & Physics Fling) ]] --
+
+-- โหลด MacLib
+local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
+
+-- ตั้งค่า Window
+local Window = MacLib:Window({
+    Title = "Thailand XVP V13 | MacLib",
+    Subtitle = "Ultra Physics Fling & Control",
+    Size = UDim2.fromOffset(550, 450),
+    Theme = MacLib.Themes.Dark,
+    Extension = "XVP"
+})
+
+-- ตัวแปรระบบ
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
-local SoundService = game:GetService("SoundService")
-
+local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
-
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-LocalPlayer.CharacterAdded:Connect(function(c) Character = c end)
-
-local LogoAsset = "rbxassetid://94715455570142"
+local SelectedTarget = nil
 
 ----------------------------------------------------------------
--- [ 🔊 Sound System Setup ]
+-- [ 🚀 ฟังก์ชัน Fling ดีดคนออกนอกแมพ (Fixed Engine) ]
 ----------------------------------------------------------------
-local InitSound = Instance.new("Sound")
-InitSound.Name = "XVP_InitSound"
-InitSound.SoundId = "rbxassetid://132948338000932"
-InitSound.Volume = 2
-InitSound.Parent = SoundService
-InitSound:Play()
+local isFlinging = false
 
-local ClickSound = Instance.new("Sound")
-ClickSound.Name = "XVP_ClickSound"
-ClickSound.SoundId = "rbxassetid://6895079853"
-ClickSound.Volume = 0.5
-ClickSound.Parent = SoundService
-
-local function PlayClick()
-    ClickSound:Play()
-end
-
-----------------------------------------------------------------
--- [ 1. ScreenGui & Main Frame ]
-----------------------------------------------------------------
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ThailandXVP_Rayfield_Gui"
-pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
-if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
-
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 540, 0, 440)
-MainFrame.Position = UDim2.new(0.5, -270, 0.5, -220)
-MainFrame.BackgroundColor3 = Color3.fromRGB(21, 21, 21)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
-
-local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(40, 40, 40)
-MainStroke.Thickness = 1.5
-
--- Top Header
-local TopBar = Instance.new("Frame", MainFrame)
-TopBar.Size = UDim2.new(1, 0, 0, 40)
-TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-TopBar.BorderSizePixel = 0
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
-
-local HeaderLogo = Instance.new("ImageLabel", TopBar)
-HeaderLogo.Size = UDim2.new(0, 24, 0, 24)
-HeaderLogo.Position = UDim2.new(0, 12, 0, 8)
-HeaderLogo.BackgroundTransparency = 1
-HeaderLogo.Image = LogoAsset
-
-local TitleBar = Instance.new("TextLabel", TopBar)
-TitleBar.Size = UDim2.new(1, -50, 1, 0)
-TitleBar.Position = UDim2.new(0, 44, 0, 0)
-TitleBar.Text = "Thailand XVP  |  Rayfield (Murderer All-In-One V11)"
-TitleBar.TextColor3 = Color3.fromRGB(235, 235, 235)
-TitleBar.TextSize = 14
-TitleBar.Font = Enum.Font.GothamBold
-TitleBar.TextXAlignment = Enum.TextXAlignment.Left
-TitleBar.BackgroundTransparency = 1
-
-local Sidebar = Instance.new("Frame", MainFrame)
-Sidebar.Size = UDim2.new(0, 150, 1, -45)
-Sidebar.Position = UDim2.new(0, 8, 0, 42)
-Sidebar.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-Sidebar.BorderSizePixel = 0
-Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 6)
-
-local PageContainer = Instance.new("Frame", MainFrame)
-PageContainer.Size = UDim2.new(1, -172, 1, -50)
-PageContainer.Position = UDim2.new(0, 164, 0, 44)
-PageContainer.BackgroundTransparency = 1
-
-----------------------------------------------------------------
--- [ 2. Language Structure ]
-----------------------------------------------------------------
-local CurrentLanguage = "TH"
-local LanguageData = {
-    TH = {
-        Tab1 = "Menu Xerox",
-        Tab2 = "PVP Xerox VP",
-        TabMurder = "Murder Xerox 🔪",
-        TabFarm = "เมนูฟาร์มทั้งหมด",
-        Tab3 = "Setting Xerox",
-        Speed = "วิ่งเร็ว (ระดับ 1-10)",
-        Noclip = "ทะลุกำแพง (Noclip)",
-        Jump = "โดดสูง (ระดับ 1-10)",
-        Invis = "หายตัว (Invisible)",
-        KillAura = "ออร่าฟันอัตโนมัติ (Kill Aura) ⚔️",
-        ESP = "ESP สีตัวคน + ป้ายชื่อ",
-        AntiKick = "กันโดนเตะ / กันแบน (Anti-Kick) 🛡️",
-        Potato = "ภาพดินน้ำมัน (เปิด/ปิด ได้)",
-        FullBright = "เพิ่มแสง (FullBright)",
-        BringGun = "ดึงปืนที่ตกมาหาตัว 🔫",
-        TpMurderer = "วาร์ปไปหาฆาตกร (ปกติ) 🔪",
-        TpSheriff = "วาร์ปไปหาตำรวจ (ปกติ) 👮",
-        CurveBullet = "ยิงกระสุนโค้งเข้าลำตัว 🌀",
-        MurderESP = "ESP แยกบทบาท (ฆาตกร/ตำรวจ) 🎯",
-        AimLockMurder = "Aimbot ล็อคลำตัวฆาตกร 🔪",
-        SelectPlayer = "เลือกผู้เล่นเป้าหมาย:",
-        TpToPlayer = "วาร์ปไปหาผู้เล่นที่เลือก 🚀",
-        FlingPlayer = "ดีดผู้เล่นที่เลือกให้ปลิว 💥",
-        FlingMurder = "วาร์ปไปดีดฆาตกรปลิว 💥",
-        FlingSheriff = "วาร์ปไปดีดตำรวจปลิว 💥",
-        ChangeLang = "เปลี่ยนภาษา (Language): 🇹🇭 TH"
-    },
-    ENG = {
-        Tab1 = "Menu Xerox",
-        Tab2 = "PVP Xerox VP",
-        TabMurder = "Murder Xerox 🔪",
-        TabFarm = "All Farm Menu",
-        Tab3 = "Setting Xerox",
-        Speed = "WalkSpeed (Level 1-10)",
-        Noclip = "Noclip",
-        Jump = "JumpPower (Level 1-10)",
-        Invis = "Invisible",
-        KillAura = "Auto Attack (Kill Aura) ⚔️",
-        ESP = "Player Body Color ESP",
-        AntiKick = "Anti-Kick Protection 🛡️",
-        Potato = "Potato Graphics (Toggle)",
-        FullBright = "FullBright",
-        BringGun = "Bring Dropped Gun 🔫",
-        TpMurderer = "TP to Murderer (Normal) 🔪",
-        TpSheriff = "TP to Sheriff (Normal) 👮",
-        CurveBullet = "Curve Bullet to Body 🌀",
-        MurderESP = "Role ESP (Murderer/Sheriff) 🎯",
-        AimLockMurder = "Aimbot Lock Body Murderer 🔪",
-        SelectPlayer = "Select Target Player:",
-        TpToPlayer = "TP to Selected Player 🚀",
-        FlingPlayer = "Fling Selected Player 💥",
-        FlingMurder = "Fling Murderer 💥",
-        FlingSheriff = "Fling Sheriff 💥",
-        ChangeLang = "Change Language: 🇬🇧 ENG"
-    }
-}
-
-local Pages = {}
-local TabButtons = {}
-local TextObjects = {}
-
-local function CreateTab(tabKey, order)
-    local Page = Instance.new("ScrollingFrame", PageContainer)
-    Page.Name = tabKey .. "Page"
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
-    Page.BorderSizePixel = 0
-    Page.ScrollBarThickness = 2
-    Page.ScrollBarImageColor3 = Color3.fromRGB(255, 85, 0)
-    Page.Visible = (order == 1)
+local function FlingTarget(targetPlayer)
+    if isFlinging then return end
+    if not targetPlayer or not targetPlayer.Character then return end
     
-    local UIList = Instance.new("UIListLayout", Page)
-    UIList.SortOrder = Enum.SortOrder.LayoutOrder
-    UIList.Padding = UDim.new(0, 6)
+    local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local myChar = LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
     
-    Pages[tabKey] = Page
-
-    local TabBtn = Instance.new("TextButton", Sidebar)
-    TabBtn.Size = UDim2.new(1, -10, 0, 32)
-    TabBtn.Position = UDim2.new(0, 5, 0, (order - 1) * 36 + 6)
-    TabBtn.BackgroundColor3 = (order == 1) and Color3.fromRGB(255, 85, 0) or Color3.fromRGB(24, 24, 24)
-    TabBtn.Text = LanguageData[CurrentLanguage][tabKey] or tabKey
-    TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabBtn.Font = Enum.Font.GothamMedium
-    TabBtn.TextSize = 11
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 5)
-
-    TextObjects[TabBtn] = function() TabBtn.Text = LanguageData[CurrentLanguage][tabKey] or tabKey end
-
-    TabBtn.MouseButton1Click:Connect(function()
-        PlayClick()
-        for name, p in pairs(Pages) do p.Visible = (name == tabKey) end
-        for _, b in pairs(TabButtons) do b.BackgroundColor3 = Color3.fromRGB(24, 24, 24) end
-        TabBtn.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
-    end)
-
-    table.insert(TabButtons, TabBtn)
-    return Page
-end
-
-local Tab1 = CreateTab("Tab1", 1)
-local Tab2 = CreateTab("Tab2", 2)
-local TabMurder = CreateTab("TabMurder", 3)
-local TabFarm = CreateTab("TabFarm", 4)
-local Tab3 = CreateTab("Tab3", 5)
-
-----------------------------------------------------------------
--- [ 3. UI Helpers ]
-----------------------------------------------------------------
-local function CreateToggle(parent, langKey, default, callback)
-    local Frame = Instance.new("Frame", parent)
-    Frame.Size = UDim2.new(1, -10, 0, 36)
-    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
-
-    local Stroke = Instance.new("UIStroke", Frame)
-    Stroke.Color = Color3.fromRGB(35, 35, 35)
-
-    local Label = Instance.new("TextLabel", Frame)
-    Label.Size = UDim2.new(1, -50, 1, 0)
-    Label.Position = UDim2.new(0, 10, 0, 0)
-    Label.Text = LanguageData[CurrentLanguage][langKey] or langKey
-    Label.TextColor3 = Color3.fromRGB(210, 210, 210)
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.BackgroundTransparency = 1
-
-    TextObjects[Label] = function() Label.Text = LanguageData[CurrentLanguage][langKey] or langKey end
-
-    local Btn = Instance.new("TextButton", Frame)
-    Btn.Size = UDim2.new(0, 34, 0, 18)
-    Btn.Position = UDim2.new(1, -42, 0.5, -9)
-    Btn.Text = ""
-    Btn.BackgroundColor3 = default and Color3.fromRGB(255, 85, 0) or Color3.fromRGB(45, 45, 45)
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(1, 0)
-
-    local Dot = Instance.new("Frame", Btn)
-    Dot.Size = UDim2.new(0, 14, 0, 14)
-    Dot.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-    Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
-
-    local state = default
-    Btn.MouseButton1Click:Connect(function()
-        PlayClick()
-        state = not state
-        Btn.BackgroundColor3 = state and Color3.fromRGB(255, 85, 0) or Color3.fromRGB(45, 45, 45)
-        Dot.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-        callback(state)
-    end)
-end
-
-local function CreateSlider(parent, langKey, min, max, default, callback)
-    local Frame = Instance.new("Frame", parent)
-    Frame.Size = UDim2.new(1, -10, 0, 46)
-    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
-
-    local Stroke = Instance.new("UIStroke", Frame)
-    Stroke.Color = Color3.fromRGB(35, 35, 35)
-
-    local Label = Instance.new("TextLabel", Frame)
-    Label.Size = UDim2.new(1, -20, 0, 20)
-    Label.Position = UDim2.new(0, 10, 0, 4)
-    Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(default)
-    Label.TextColor3 = Color3.fromRGB(210, 210, 210)
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.BackgroundTransparency = 1
-
-    local val = default
-    TextObjects[Label] = function() Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(val) end
-
-    local SliderBar = Instance.new("TextButton", Frame)
-    SliderBar.Size = UDim2.new(1, -20, 0, 6)
-    SliderBar.Position = UDim2.new(0, 10, 0, 30)
-    SliderBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    SliderBar.Text = ""
-    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
-
-    local Fill = Instance.new("Frame", SliderBar)
-    Fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
-    Fill.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
-    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
-
-    local dragging = false
-    local function update(input)
-        local pos = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
-        val = math.floor(min + (max - min) * pos)
-        Fill.Size = UDim2.new(pos, 0, 1, 0)
-        Label.Text = (LanguageData[CurrentLanguage][langKey] or langKey) .. ": " .. tostring(val)
-        callback(val)
-    end
-
-    SliderBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; update(input)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then update(input) end
-    end)
-end
-
-local function CreateButton(parent, langKey, callback)
-    local Btn = Instance.new("TextButton", parent)
-    Btn.Size = UDim2.new(1, -10, 0, 36)
-    Btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    Btn.Text = LanguageData[CurrentLanguage][langKey] or langKey
-    Btn.TextColor3 = Color3.fromRGB(210, 210, 210)
-    Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 12
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 5)
-    local Stroke = Instance.new("UIStroke", Btn)
-    Stroke.Color = Color3.fromRGB(35, 35, 35)
-
-    TextObjects[Btn] = function() Btn.Text = LanguageData[CurrentLanguage][langKey] or langKey end
-    Btn.MouseButton1Click:Connect(function()
-        PlayClick()
-        callback()
-    end)
-end
-
-----------------------------------------------------------------
--- [ 4. 💥 Ultimate Physics Fling Engine ]
-----------------------------------------------------------------
-local function RealFlingTarget(targetPlr)
-    if not targetPlr or not targetPlr.Character or not targetPlr.Character:FindFirstChild("HumanoidRootPart") then return end
-    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
-
-    local myHrp = Character.HumanoidRootPart
-    local targetHrp = targetPlr.Character.HumanoidRootPart
-    local oldCFrame = myHrp.CFrame
+    if not targetHRP or not myHRP or not myHum then return end
     
-    local vel = Instance.new("BodyVelocity")
-    vel.Name = "XVP_FlingVelocity"
-    vel.Velocity = Vector3.new(0, 99999, 0)
-    vel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    vel.Parent = myHrp
+    isFlinging = true
+    
+    -- เซ็ตค่ากล้องไม่ให้มึนหัวขณะ Fling
+    local oldCFrame = myHRP.CFrame
+    
+    -- สร้างแรงเหวี่ยงฟิสิกส์ระดับสูง
+    local bV = Instance.new("BodyVelocity")
+    bV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bV.Velocity = Vector3.new(999999, 999999, 999999)
+    bV.Parent = myHRP
 
-    local rot = Instance.new("BodyAngularVelocity")
-    rot.Name = "XVP_FlingRot"
-    rot.AngularVelocity = Vector3.new(99999, 99999, 99999)
-    rot.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    rot.Parent = myHrp
+    local bAV = Instance.new("BodyAngularVelocity")
+    bAV.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bAV.AngularVelocity = Vector3.new(999999, 999999, 999999)
+    bAV.Parent = myHRP
 
+    -- ลูปเข้าชนเป้าหมายสลับจังหวะ (Push Loop)
     local startTime = tick()
-    task.spawn(function()
-        while tick() - startTime < 1.5 do
-            if not targetHrp or not targetHrp.Parent then break end
-            myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 0) * CFrame.Angles(math.rad(math.random(-360,360)), math.rad(math.random(-360,360)), math.rad(math.random(-360,360)))
-            myHrp.Velocity = Vector3.new(9999, 9999, 9999)
-            RunService.RenderStepped:Wait()
+    local flingConnection
+    
+    flingConnection = RunService.Heartbeat:Connect(function()
+        if not isFlinging or (tick() - startTime > 1.5) or not targetPlayer.Character or not targetHRP.Parent then
+            flingConnection:Disconnect()
+            bV:Destroy()
+            bAV:Destroy()
+            
+            -- ดึงตัวเรากลับมาตำแหน่งเดิม
+            myHRP.Velocity = Vector3.new(0, 0, 0)
+            myHRP.RotVelocity = Vector3.new(0, 0, 0)
+            myHRP.CFrame = oldCFrame
+            isFlinging = false
+            return
         end
         
-        vel:Destroy()
-        rot:Destroy()
-        myHrp.Velocity = Vector3.new(0, 0, 0)
-        myHrp.RotVelocity = Vector3.new(0, 0, 0)
-        myHrp.CFrame = oldCFrame
+        -- ปรับฟิสิกส์ชนแรงสูง
+        myHRP.Velocity = Vector3.new(0, 9999, 0)
+        myHRP.RotVelocity = Vector3.new(99999, 99999, 99999)
+        
+        -- วาร์ปไปอัดตำแหน่งเป้าหมายตรงๆ
+        myHRP.CFrame = targetHRP.CFrame * CFrame.new(math.random(-1,1), math.random(-1,1), math.random(-1,1))
     end)
 end
 
 ----------------------------------------------------------------
--- [ 5. Tab 1 & Tab 2 (Menu & PVP General) ]
+-- [ Tab 1: Pull & Fling Systems ]
 ----------------------------------------------------------------
-local SpeedLevel = 1
-local NoclipEnabled = false
-local JumpLevel = 1
-local ESPEnabled = false
-local KillAuraEnabled = false
+local TabPull = Window:Tab("Pull & Fling 🧲")
 
-CreateSlider(Tab1, "Speed", 1, 10, 1, function(v) SpeedLevel = v end)
-CreateToggle(Tab1, "Noclip", false, function(v) NoclipEnabled = v end)
-CreateSlider(Tab1, "Jump", 1, 10, 1, function(v) JumpLevel = v end)
-CreateToggle(Tab1, "Invis", false, function(v)
-    if Character then
-        for _, p in pairs(Character:GetDescendants()) do
-            if p:IsA("BasePart") or p:IsA("Decal") then p.Transparency = v and 1 or 0 end
+-- Section 1: Fling & Push
+local SecFling = TabPull:Section("Super Fling (ดีดคนออกแมพ)")
+
+SecFling:Button({
+    Name = "🚀 ดีดเป้าหมายออกนอกแมพ (Fling Selected)",
+    Callback = function()
+        if SelectedTarget then
+            FlingTarget(SelectedTarget)
         end
     end
-end)
+})
 
--- Tab 2 Features
-CreateToggle(Tab2, "ESP", false, function(v) ESPEnabled = v end)
-
-----------------------------------------------------------------
--- [ 6. 🔪 Murder Xerox Functions (Kill Aura Integrated Here!) ]
-----------------------------------------------------------------
-local MurderESPEnabled = false
-local AimLockMurderEnabled = false
-local CurveBulletEnabled = false
-local SelectedTargetPlayer = nil
-
--- Floating Shoot Button
-local ShootBtn = Instance.new("TextButton", ScreenGui)
-ShootBtn.Name = "XVP_ShootButton"
-ShootBtn.Size = UDim2.new(0, 75, 0, 75)
-ShootBtn.Position = UDim2.new(0.8, -35, 0.5, -35)
-ShootBtn.BackgroundColor3 = Color3.fromRGB(220, 30, 30)
-ShootBtn.Text = "SHOOT\n🎯"
-ShootBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ShootBtn.Font = Enum.Font.GothamBold
-ShootBtn.TextSize = 13
-ShootBtn.Visible = false
-ShootBtn.Active = true
-ShootBtn.Draggable = true
-
-Instance.new("UICorner", ShootBtn).CornerRadius = UDim.new(1, 0)
-local ShootStroke = Instance.new("UIStroke", ShootBtn)
-ShootStroke.Color = Color3.fromRGB(255, 255, 255)
-ShootStroke.Thickness = 3
-
-local function GetMurdererPlayer()
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            local char = plr.Character
-            local backpack = plr:FindFirstChild("Backpack")
-            local hasKnife = char:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife"))
-            if hasKnife then return plr end
-        end
+local AutoFlingLoop = false
+SecFling:Toggle({
+    Name = "🔄 ลูปดีดเป้าหมายเรื่อยๆ (Loop Fling)",
+    Default = false,
+    Callback = function(v)
+        AutoFlingLoop = v
     end
-    return nil
-end
+})
 
-local function GetSheriffPlayer()
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            local char = plr.Character
-            local backpack = plr:FindFirstChild("Backpack")
-            local hasGun = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("Revolver")))
-            if hasGun then return plr end
-        end
+-- Section 2: Target Selector
+local SecTarget = TabPull:Section("เลือกเป้าหมาย")
+
+local TargetNames = {}
+local TargetDropdown = SecTarget:Dropdown({
+    Name = "เลือกชื่อผู้เล่น:",
+    Items = TargetNames,
+    Callback = function(v)
+        SelectedTarget = Players:FindFirstChild(v)
     end
-    return nil
-end
+})
 
-local function GetMurderRole(plr)
-    if not plr or not plr.Character then return "Innocent" end
-    local char = plr.Character
-    local backpack = plr:FindFirstChild("Backpack")
-    
-    local hasKnife = char:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife"))
-    local hasGun = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("Revolver")))
-    
-    if hasKnife then return "Murderer" end
-    if hasGun then return "Sheriff" end
-    return "Innocent"
-end
-
-local function ShootMurdererCurve()
-    local murderer = GetMurdererPlayer()
-    if not murderer or not murderer.Character then return end
-    
-    local targetBody = murderer.Character:FindFirstChild("HumanoidRootPart") or murderer.Character:FindFirstChild("UpperTorso")
-    if not targetBody then return end
-    
-    local gun = Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
-    
-    if gun then
-        if gun.Parent == LocalPlayer.Backpack then
-            Character.Humanoid:EquipTool(gun)
-            task.wait(0.05)
-        end
-        
-        local shootRemote = gun:FindFirstChild("Shoot") or gun:FindFirstChild("KnifeServer") or game:GetService("ReplicatedStorage"):FindFirstChild("Shoot", true)
-        
-        if shootRemote and shootRemote:IsA("RemoteEvent") then
-            shootRemote:FireServer(targetBody.CFrame, targetBody.Position)
-        else
-            local oldCam = Camera.CFrame
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetBody.Position)
-            if mouse1click then mouse1click() else gun:Activate() end
-            task.wait(0.02)
-            Camera.CFrame = oldCam
-        end
-    end
-end
-
-ShootBtn.MouseButton1Click:Connect(function()
-    PlayClick()
-    ShootMurdererCurve()
-end)
-
--- 🔥 [ย้าย Kill Aura มาใส่ใน Tab Murder]
-CreateToggle(TabMurder, "KillAura", false, function(v) KillAuraEnabled = v end)
-
-CreateButton(TabMurder, "BringGun", function()
-    local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
-    if not gunDrop then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj.Name == "GunDrop" or obj.Name == "Gun" and obj:IsA("BasePart") or obj:IsA("Model") then
-                gunDrop = obj
-                break
-            end
-        end
-    end
-
-    if gunDrop and Character and Character:FindFirstChild("HumanoidRootPart") then
-        local targetPos = Character.HumanoidRootPart.CFrame * CFrame.new(0, -2, 0)
-        if gunDrop:IsA("Model") then gunDrop:SetPrimaryPartCFrame(targetPos)
-        elseif gunDrop:IsA("BasePart") then gunDrop.CFrame = targetPos end
-    end
-end)
-
-CreateButton(TabMurder, "TpMurderer", function()
-    local m = GetMurdererPlayer()
-    if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") then
-        if Character and Character:FindFirstChild("HumanoidRootPart") then
-            Character.HumanoidRootPart.CFrame = m.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-        end
-    end
-end)
-
-CreateButton(TabMurder, "TpSheriff", function()
-    local s = GetSheriffPlayer()
-    if s and s.Character and s.Character:FindFirstChild("HumanoidRootPart") then
-        if Character and Character:FindFirstChild("HumanoidRootPart") then
-            Character.HumanoidRootPart.CFrame = s.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-        end
-    end
-end)
-
-CreateToggle(TabMurder, "CurveBullet", false, function(v)
-    CurveBulletEnabled = v
-    ShootBtn.Visible = v
-end)
-
-CreateToggle(TabMurder, "AimLockMurder", false, function(v) AimLockMurderEnabled = v end)
-CreateToggle(TabMurder, "MurderESP", false, function(v) MurderESPEnabled = v end)
-
--- Target Selector
-local SelectFrame = Instance.new("Frame", TabMurder)
-SelectFrame.Size = UDim2.new(1, -10, 0, 36)
-SelectFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Instance.new("UICorner", SelectFrame).CornerRadius = UDim.new(0, 5)
-
-local SelectLabel = Instance.new("TextLabel", SelectFrame)
-SelectLabel.Size = UDim2.new(0, 140, 1, 0)
-SelectLabel.Position = UDim2.new(0, 10, 0, 0)
-SelectLabel.Text = LanguageData[CurrentLanguage]["SelectPlayer"]
-SelectLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-SelectLabel.Font = Enum.Font.Gotham
-SelectLabel.TextSize = 11
-SelectLabel.TextXAlignment = Enum.TextXAlignment.Left
-SelectLabel.BackgroundTransparency = 1
-TextObjects[SelectLabel] = function() SelectLabel.Text = LanguageData[CurrentLanguage]["SelectPlayer"] end
-
-local DropBtn = Instance.new("TextButton", SelectFrame)
-DropBtn.Size = UDim2.new(0.5, 0, 0.7, 0)
-DropBtn.Position = UDim2.new(0.46, 0, 0.15, 0)
-DropBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-DropBtn.Text = "คลิกเพื่อสลับเลือกชื่อคน..."
-DropBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-DropBtn.Font = Enum.Font.GothamMedium
-DropBtn.TextSize = 10
-Instance.new("UICorner", DropBtn).CornerRadius = UDim.new(0, 4)
-
-DropBtn.MouseButton1Click:Connect(function()
-    PlayClick()
-    local allPlrs = {}
+local function RefreshList()
+    TargetNames = {}
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then table.insert(allPlrs, p) end
-    end
-    if #allPlrs > 0 then
-        local currentIdx = 0
-        for idx, p in pairs(allPlrs) do
-            if p == SelectedTargetPlayer then currentIdx = idx break end
-        end
-        local nextIdx = (currentIdx % #allPlrs) + 1
-        SelectedTargetPlayer = allPlrs[nextIdx]
-        DropBtn.Text = SelectedTargetPlayer.DisplayName
-    end
-end)
-
-CreateButton(TabMurder, "TpToPlayer", function()
-    if SelectedTargetPlayer and SelectedTargetPlayer.Character and SelectedTargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        if Character and Character:FindFirstChild("HumanoidRootPart") then
-            Character.HumanoidRootPart.CFrame = SelectedTargetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        if p ~= LocalPlayer then
+            table.insert(TargetNames, p.Name)
         end
     end
-end)
-
-CreateButton(TabMurder, "FlingPlayer", function()
-    if SelectedTargetPlayer then RealFlingTarget(SelectedTargetPlayer) end
-end)
-
-CreateButton(TabMurder, "FlingMurder", function()
-    local m = GetMurdererPlayer()
-    if m then RealFlingTarget(m) end
-end)
-
-CreateButton(TabMurder, "FlingSheriff", function()
-    local s = GetSheriffPlayer()
-    if s then RealFlingTarget(s) end
-end)
-
-----------------------------------------------------------------
--- [ 7. Tab 4 & Tab 5 (Settings & AntiKick) ]
-----------------------------------------------------------------
-CreateToggle(TabFarm, "DeleteWalls", false, function(v)
-    if v then
-        for _, p in pairs(workspace:GetDescendants()) do
-            if p.Name == "WallL" or p.Name == "WallR" then p:Destroy() end
-        end
-    end
-end)
-
-local AntiKickEnabled = false
-local OriginalMaterials = {}
-
-local function EnableAntiKick()
-    local rawMetatable = getrawmetatable or debug.getmetatable
-    local setReadOnly = setreadonly or make_writeable
-    if rawMetatable and setReadOnly then
-        local gmt = rawMetatable(game)
-        local oldNamecall = gmt.__namecall
-        setReadOnly(gmt, false)
-
-        gmt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            if AntiKickEnabled and string.lower(method) == "kick" then
-                return nil
-            end
-            return oldNamecall(self, ...)
-        end)
-        setReadOnly(gmt, true)
-    end
+    TargetDropdown:Set(TargetNames)
 end
 
-CreateToggle(Tab3, "AntiKick", false, function(v)
-    AntiKickEnabled = v
-    if v then pcall(EnableAntiKick) end
-end)
-
-local LangBtn = Instance.new("TextButton", Tab3)
-LangBtn.Size = UDim2.new(1, -10, 0, 36)
-LangBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-LangBtn.Text = LanguageData[CurrentLanguage]["ChangeLang"]
-LangBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
-LangBtn.Font = Enum.Font.Gotham
-LangBtn.TextSize = 12
-Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 5)
-
-LangBtn.MouseButton1Click:Connect(function()
-    PlayClick()
-    CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
-    LangBtn.Text = LanguageData[CurrentLanguage]["ChangeLang"]
-    for _, func in pairs(TextObjects) do func() end
-end)
-
-CreateToggle(Tab3, "Potato", false, function(v)
-    if v then
-        for _, p in pairs(workspace:GetDescendants()) do
-            if p:IsA("BasePart") then
-                if not OriginalMaterials[p] then OriginalMaterials[p] = p.Material end
-                p.Material = Enum.Material.SmoothPlastic
-            end
-        end
-    else
-        for part, mat in pairs(OriginalMaterials) do
-            if part and part.Parent then part.Material = mat end
-        end
-        OriginalMaterials = {}
+SecTarget:Button({
+    Name = "🔄 อัปเดตรายชื่อคนในแมพ",
+    Callback = function()
+        RefreshList()
     end
-end)
+})
 
-CreateToggle(Tab3, "FullBright", false, function(v)
-    Lighting.Brightness = v and 2 or 1
-    Lighting.GlobalShadows = not v
-end)
+-- Section 3: Kill Aura Pull
+local KillAuraPull = false
+local SecAura = TabPull:Section("Kill Aura System")
+
+SecAura:Toggle({
+    Name = "🧲 ดึงทุกคนในแมพมาลอยตรงหน้า (Kill Aura Pull)",
+    Default = false,
+    Callback = function(v)
+        KillAuraPull = v
+    end
+})
 
 ----------------------------------------------------------------
--- [ 8. Render Loops & Kill Aura Engine ]
+-- [ Tab 2: Movement & Main ]
+----------------------------------------------------------------
+local TabMain = Window:Tab("Main Movement")
+local SecMove = TabMain:Section("Movement Tools")
+
+SecMove:Slider({
+    Name = "ความเร็วการเดิน (WalkSpeed)",
+    Default = 16,
+    Min = 16,
+    Max = 120,
+    Callback = function(v)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v
+        end
+    end
+})
+
+local NoclipEnabled = false
+SecMove:Toggle({
+    Name = "เดินทะลุกำแพง (Noclip)",
+    Default = false,
+    Callback = function(v)
+        NoclipEnabled = v
+    end
+})
+
+----------------------------------------------------------------
+-- [ Core Loop Engine ]
 ----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
-    if Character and Character:FindFirstChild("Humanoid") then
-        local hum = Character.Humanoid
-        hum.WalkSpeed = 16 + (SpeedLevel - 1) * 12
-        hum.UseJumpPower = true
-        hum.JumpPower = 50 + (JumpLevel - 1) * 20
-    end
-
-    if NoclipEnabled and Character then
-        for _, p in pairs(Character:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = false end
-        end
-    end
-
-    -- ⚔️ Kill Aura Loop
-    if KillAuraEnabled and Character then
-        local tool = Character:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-        if tool then
-            if tool.Parent == LocalPlayer.Backpack then
-                Character.Humanoid:EquipTool(tool)
-            end
-            for _, target in pairs(Players:GetPlayers()) do
-                if target ~= LocalPlayer and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                    local dist = (target.Character.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
-                    if dist <= 18 then -- ระยะฟันอัตโนมัติ 18 หน่วย
-                        tool:Activate()
-                    end
-                end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    
+    -- Noclip
+    if NoclipEnabled then
+        for _, part in pairs(myChar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
             end
         end
     end
-
-    -- ESP & Roles
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            local char = plr.Character
-            local highlight = char:FindFirstChild("ThailandXVP_Highlight")
-
-            if MurderESPEnabled or ESPEnabled then
-                if not highlight then
-                    highlight = Instance.new("Highlight", char)
-                    highlight.Name = "ThailandXVP_Highlight"
-                end
-                
-                local col = Color3.fromRGB(0, 255, 120)
-                if MurderESPEnabled then
-                    local role = GetMurderRole(plr)
-                    if role == "Murderer" then col = Color3.fromRGB(255, 0, 0)
-                    elseif role == "Sheriff" then col = Color3.fromRGB(0, 150, 255) end
-                end
-
-                highlight.FillColor = col
-                highlight.Enabled = true
-            else
-                if highlight then highlight.Enabled = false end
+    
+    -- Pull All (Kill Aura)
+    if KillAuraPull and myHRP then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                p.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3.5)
             end
         end
     end
-
-    if AimLockMurderEnabled then
-        local m = GetMurdererPlayer()
-        if m and m.Character then
-            local bodyPart = m.Character:FindFirstChild("HumanoidRootPart") or m.Character:FindFirstChild("UpperTorso")
-            if bodyPart then
-                Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, bodyPart.Position), 0.25)
-            end
-        end
+    
+    -- Auto Loop Fling Target
+    if AutoFlingLoop and SelectedTarget and not isFlinging then
+        FlingTarget(SelectedTarget)
     end
 end)
 
-----------------------------------------------------------------
--- [ 9. Floating Button ]
-----------------------------------------------------------------
-local ToggleBtn = Instance.new("ImageButton", ScreenGui)
-ToggleBtn.Name = "RayfieldFloatingButton"
-ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-ToggleBtn.Position = UDim2.new(0, 20, 0.5, -25)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleBtn.Image = LogoAsset
-ToggleBtn.Active = true
-ToggleBtn.Draggable = true
-
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
-local CircleStroke = Instance.new("UIStroke", ToggleBtn)
-CircleStroke.Color = Color3.fromRGB(255, 85, 0)
-CircleStroke.Thickness = 2
-
-ToggleBtn.MouseButton1Click:Connect(function()
-    PlayClick()
-    MainFrame.Visible = not MainFrame.Visible
-end)
+-- Initial Target Refresh
+RefreshList()
