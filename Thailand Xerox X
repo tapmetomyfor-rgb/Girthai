@@ -1,10 +1,9 @@
--- [[ Thailand XVP - Rayfield Edition (With Murderer Lock Aimbot) ]] --
+-- [[ Thailand XVP - Rayfield Edition (V3 - Advanced Target & Fixes) ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -25,8 +24,8 @@ if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("Player
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 540, 0, 380)
-MainFrame.Position = UDim2.new(0.5, -270, 0.5, -190)
+MainFrame.Size = UDim2.new(0, 540, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -270, 0.5, -210)
 MainFrame.BackgroundColor3 = Color3.fromRGB(21, 21, 21)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -53,7 +52,7 @@ HeaderLogo.Image = LogoAsset
 local TitleBar = Instance.new("TextLabel", TopBar)
 TitleBar.Size = UDim2.new(1, -50, 1, 0)
 TitleBar.Position = UDim2.new(0, 44, 0, 0)
-TitleBar.Text = "Thailand XVP  |  Rayfield Interface"
+TitleBar.Text = "Thailand XVP  |  Rayfield Interface (V3)"
 TitleBar.TextColor3 = Color3.fromRGB(235, 235, 235)
 TitleBar.TextSize = 14
 TitleBar.Font = Enum.Font.GothamBold
@@ -73,7 +72,7 @@ PageContainer.Position = UDim2.new(0, 164, 0, 44)
 PageContainer.BackgroundTransparency = 1
 
 ----------------------------------------------------------------
--- [ 2. Language & Tabs Structure ]
+-- [ 2. Language Structure ]
 ----------------------------------------------------------------
 local CurrentLanguage = "TH"
 local LanguageData = {
@@ -98,19 +97,23 @@ local LanguageData = {
         ESPColor = "สลับสี ESP (แดง/เขียว/ฟ้า/เหลือง)",
         Aimbot = "Aimbot ล็อคเป้าหมายกลางจอ",
         AntiKick = "กันโดนเตะ / กันแบน (Anti-Kick) 🛡️",
-        Potato = "ภาพดินน้ำมัน (Potato Graphics)",
+        Potato = "ภาพดินน้ำมัน (เปิด/ปิด ได้)",
         FullBright = "เพิ่มแสง (FullBright)",
         
-        -- Murder Features
+        -- Murder & Target Features
         MurderESP = "ESP แยกบทบาท (ฆาตกร/ตำรวจ) 🎯",
         AutoGetGun = "วาร์ปเก็บปืนอัตโนมัติ 🔫",
         TpToMurder = "วาร์ปไปหาฆาตกร 🔪",
         TpToSheriff = "วาร์ปไปหานายอำเภอ 👮",
-        TpToGun = "วาร์ปไปหาปืน 🔫",
+        FlingMurder = "วาร์ปไปดีดฆาตกรปลิว 💥",
+        FlingSheriff = "วาร์ปไปดีดตำรวจปลิว 💥",
         KillAura = "Kill Aura (ฟันใกล้อัตโนมัติ) ⚔️",
         BringAll = "ดึงทุกคนมาตรงหน้า (Bring All) 🧲",
         LoopFling = "หมุนตัวชนคนปลิว (Loop Fling) 🌀",
-        AimLockMurder = "Aimbot ล็อคหัวฆาตกรอัตโนมัติ 🎯"
+        AimLockMurder = "Aimbot ล็อคหัวฆาตกรอัตโนมัติ 🎯",
+        SelectPlayer = "เลือกผู้เล่นเป้าหมาย:",
+        TpToPlayer = "วาร์ปไปหาผู้เล่นที่เลือก 🚀",
+        FlingPlayer = "ดีดผู้เล่นที่เลือกให้ปลิว 💥"
     },
     ENG = {
         Tab1 = "Menu Xerox",
@@ -133,19 +136,23 @@ local LanguageData = {
         ESPColor = "Change ESP Color",
         Aimbot = "Aimbot (Center Lock)",
         AntiKick = "Anti-Kick / Anti-Ban Protection 🛡️",
-        Potato = "Potato Graphics",
+        Potato = "Potato Graphics (Toggle On/Off)",
         FullBright = "FullBright",
         
-        -- Murder Features
+        -- Murder & Target Features
         MurderESP = "Role ESP (Murderer/Sheriff) 🎯",
         AutoGetGun = "Auto Fetch Dropped Gun 🔫",
         TpToMurder = "TP to Murderer 🔪",
         TpToSheriff = "TP to Sheriff 👮",
-        TpToGun = "TP to Dropped Gun 🔫",
+        FlingMurder = "Fling Murderer 💥",
+        FlingSheriff = "Fling Sheriff 💥",
         KillAura = "Kill Aura ⚔️",
         BringAll = "Bring All Players 🧲",
         LoopFling = "Loop Fling Players 🌀",
-        AimLockMurder = "Lock Aimbot on Murderer 🎯"
+        AimLockMurder = "Lock Aimbot on Murderer 🎯",
+        SelectPlayer = "Select Target Player:",
+        TpToPlayer = "TP to Selected Player 🚀",
+        FlingPlayer = "Fling Selected Player 💥"
     }
 }
 
@@ -316,7 +323,38 @@ local function CreateButton(parent, langKey, callback)
 end
 
 ----------------------------------------------------------------
--- [ 4. หมวดหมู่ที่ 1: Menu Xerox ]
+-- [ 4. Fling System Engine ]
+----------------------------------------------------------------
+local function FlingTarget(targetPlr)
+    if not targetPlr or not targetPlr.Character or not targetPlr.Character:FindFirstChild("HumanoidRootPart") then return end
+    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
+
+    local myHrp = Character.HumanoidRootPart
+    local targetHrp = targetPlr.Character.HumanoidRootPart
+    local originalCFrame = myHrp.CFrame
+
+    -- Spin & Collide Fling Logic
+    local bav = Instance.new("BodyAngularVelocity")
+    bav.Name = "FlingVelocity"
+    bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bav.AngularVelocity = Vector3.new(0, 999999, 0)
+    bav.Parent = myHrp
+
+    local startTime = tick()
+    while tick() - startTime < 1.5 do
+        if not targetHrp or not targetHrp.Parent then break end
+        myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 0)
+        myHrp.Velocity = Vector3.new(0, 9999, 0)
+        RunService.RenderStepped:Wait()
+    end
+
+    bav:Destroy()
+    myHrp.Velocity = Vector3.new(0, 0, 0)
+    myHrp.CFrame = originalCFrame
+end
+
+----------------------------------------------------------------
+-- [ 5. Tab 1: Menu Xerox ]
 ----------------------------------------------------------------
 local SpeedLevel = 1
 local NoclipEnabled = false
@@ -338,117 +376,48 @@ CreateToggle(Tab1, "Invis", false, function(v)
     end
 end)
 
-local SoundIdBox = Instance.new("TextBox", Tab1)
-SoundIdBox.Size = UDim2.new(1, -10, 0, 36)
-SoundIdBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-SoundIdBox.PlaceholderText = LanguageData[CurrentLanguage]["BoomboxPlaceholder"]
-SoundIdBox.Text = ""
-SoundIdBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SoundIdBox.Font = Enum.Font.Gotham
-SoundIdBox.TextSize = 12
-Instance.new("UICorner", SoundIdBox).CornerRadius = UDim.new(0, 5)
-local SoundIdBoxStroke = Instance.new("UIStroke", SoundIdBox)
-SoundIdBoxStroke.Color = Color3.fromRGB(35, 35, 35)
-
-local PlayBoomboxBtn = Instance.new("TextButton", Tab1)
-PlayBoomboxBtn.Size = UDim2.new(1, -10, 0, 36)
-PlayBoomboxBtn.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
-PlayBoomboxBtn.Text = LanguageData[CurrentLanguage]["PlayBoombox"]
-PlayBoomboxBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-PlayBoomboxBtn.Font = Enum.Font.GothamBold
-PlayBoomboxBtn.TextSize = 12
-Instance.new("UICorner", PlayBoomboxBtn).CornerRadius = UDim.new(0, 5)
-
-TextObjects[SoundIdBox] = function() SoundIdBox.PlaceholderText = LanguageData[CurrentLanguage]["BoomboxPlaceholder"] end
-TextObjects[PlayBoomboxBtn] = function() PlayBoomboxBtn.Text = LanguageData[CurrentLanguage]["PlayBoombox"] end
-
-PlayBoomboxBtn.MouseButton1Click:Connect(function()
-    local id = tonumber(SoundIdBox.Text)
-    if not id then return end
-    
-    local tool = Character:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-    local playedOnServer = false
-    
-    if tool then
-        for _, obj in pairs(tool:GetDescendants()) do
-            if obj:IsA("RemoteEvent") then
-                pcall(function() obj:FireServer(id) end)
-                pcall(function() obj:FireServer("PlaySong", id) end)
-                playedOnServer = true
-            end
-        end
-    end
-    
-    if not playedOnServer and Character and Character:FindFirstChild("HumanoidRootPart") then
-        local sound = Character.HumanoidRootPart:FindFirstChild("LocalBoomboxSound")
-        if not sound then
-            sound = Instance.new("Sound", Character.HumanoidRootPart)
-            sound.Name = "LocalBoomboxSound"
-        end
-        sound.SoundId = "rbxassetid://" .. tostring(id)
-        sound.Volume = 2
-        sound:Play()
-    end
-end)
-
 ----------------------------------------------------------------
--- [ 5. หมวดหมู่ที่ 2: PVP Xerox VP ]
+-- [ 6. Tab 2: PVP Xerox VP & FOV Aimbot Circle ]
 ----------------------------------------------------------------
-local AutoParryEnabled = false
-local ESPEnabled = false
 local ESPColors = {Color3.fromRGB(255,0,0), Color3.fromRGB(0,255,0), Color3.fromRGB(0,180,255), Color3.fromRGB(255,220,0)}
 local CurrentESPColorIdx = 1
+local ESPEnabled = false
 local AimbotEnabled = false
 
+-- FOV Circle Graphic UI
 local AimCircle = Instance.new("Frame", ScreenGui)
 AimCircle.Name = "AimbotFOV_Circle"
-AimCircle.Size = UDim2.new(0, 120, 0, 120)
-AimCircle.Position = UDim2.new(0.5, -60, 0.5, -60)
+AimCircle.Size = UDim2.new(0, 140, 0, 140)
+AimCircle.Position = UDim2.new(0.5, -70, 0.5, -70)
 AimCircle.BackgroundTransparency = 1
 AimCircle.Visible = false
 
 local AimStroke = Instance.new("UIStroke", AimCircle)
 AimStroke.Color = Color3.fromRGB(255, 85, 0)
-AimStroke.Thickness = 2
+AimStroke.Thickness = 1.5
 
 local AimDot = Instance.new("Frame", AimCircle)
-AimDot.Size = UDim2.new(0, 6, 0, 6)
-AimDot.Position = UDim2.new(0.5, -3, 0.5, -3)
+AimDot.Size = UDim2.new(0, 4, 0, 4)
+AimDot.Position = UDim2.new(0.5, -2, 0.5, -2)
 AimDot.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
 Instance.new("UICorner", AimDot).CornerRadius = UDim.new(1, 0)
 Instance.new("UICorner", AimCircle).CornerRadius = UDim.new(1, 0)
 
-CreateToggle(Tab2, "AutoParry", false, function(v) AutoParryEnabled = v end)
 CreateToggle(Tab2, "ESP", false, function(v) ESPEnabled = v end)
-
-local ColorBtn = Instance.new("TextButton", Tab2)
-ColorBtn.Size = UDim2.new(1, -10, 0, 36)
-ColorBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"]
-ColorBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
-ColorBtn.Font = Enum.Font.Gotham
-ColorBtn.TextSize = 12
-Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 5)
-
-TextObjects[ColorBtn] = function() ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"] end
-ColorBtn.MouseButton1Click:Connect(function()
-    CurrentESPColorIdx = (CurrentESPColorIdx % #ESPColors) + 1
-end)
-
 CreateToggle(Tab2, "Aimbot", false, function(v)
     AimbotEnabled = v
     AimCircle.Visible = v
 end)
 
 ----------------------------------------------------------------
--- [ 6. 🔪 หมวดหมู่ใหม่: Murder Xerox ]
+-- [ 7. 🔪 Tab 3: Murder Xerox & Player Teleport/Fling ]
 ----------------------------------------------------------------
 local MurderESPEnabled = false
 local AutoGetGunEnabled = false
 local KillAuraEnabled = false
 local BringAllEnabled = false
-local FlingEnabled = false
 local AimLockMurderEnabled = false
+local SelectedTargetPlayer = nil
 
 local function GetMurderRole(plr)
     if not plr or not plr.Character then return "Innocent" end
@@ -463,156 +432,119 @@ local function GetMurderRole(plr)
     return "Innocent"
 end
 
-local function GetDroppedGun()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "GunDrop" or v.Name == "Gun" and v:IsA("BasePart") then
-            return v
+-- Player Selector Dropdown UI Frame
+local SelectFrame = Instance.new("Frame", TabMurder)
+SelectFrame.Size = UDim2.new(1, -10, 0, 36)
+SelectFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", SelectFrame).CornerRadius = UDim.new(0, 5)
+
+local SelectLabel = Instance.new("TextLabel", SelectFrame)
+SelectLabel.Size = UDim2.new(0.4, 0, 1, 0)
+SelectLabel.Position = UDim2.new(0, 10, 0, 0)
+SelectLabel.Text = LanguageData[CurrentLanguage]["SelectPlayer"]
+SelectLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SelectLabel.Font = Enum.Font.Gotham
+SelectLabel.TextSize = 11
+SelectLabel.TextXAlignment = Enum.TextXAlignment.Left
+SelectLabel.BackgroundTransparency = 1
+TextObjects[SelectLabel] = function() SelectLabel.Text = LanguageData[CurrentLanguage]["SelectPlayer"] end
+
+local DropBtn = Instance.new("TextButton", SelectFrame)
+DropBtn.Size = UDim2.new(0.55, 0, 0.7, 0)
+DropBtn.Position = UDim2.new(0.42, 0, 0.15, 0)
+DropBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+DropBtn.Text = "เลือกผู้เล่น..."
+DropBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+DropBtn.Font = Enum.Font.GothamMedium
+DropBtn.TextSize = 11
+Instance.new("UICorner", DropBtn).CornerRadius = UDim.new(0, 4)
+
+DropBtn.MouseButton1Click:Connect(function()
+    local pList = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(pList, p.DisplayName .. " (@" .. p.Name .. ")") end
+    end
+    if #pList > 0 then
+        local nextIdx = 1
+        if SelectedTargetPlayer then
+            for idx, p in pairs(Players:GetPlayers()) do
+                if p == SelectedTargetPlayer then nextIdx = idx + 1 break end
+            end
+        end
+        local allPlrs = Players:GetPlayers()
+        if nextIdx > #allPlrs then nextIdx = 1 end
+        if allPlrs[nextIdx] == LocalPlayer then nextIdx = nextIdx + 1 end
+        if allPlrs[nextIdx] then
+            SelectedTargetPlayer = allPlrs[nextIdx]
+            DropBtn.Text = SelectedTargetPlayer.DisplayName
         end
     end
-    return nil
-end
+end)
+
+CreateButton(TabMurder, "TpToPlayer", function()
+    if SelectedTargetPlayer and SelectedTargetPlayer.Character and SelectedTargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        if Character and Character:FindFirstChild("HumanoidRootPart") then
+            Character.HumanoidRootPart.CFrame = SelectedTargetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        end
+    end
+end)
+
+CreateButton(TabMurder, "FlingPlayer", function()
+    if SelectedTargetPlayer then FlingTarget(SelectedTargetPlayer) end
+end)
+
+CreateButton(TabMurder, "FlingMurder", function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and GetMurderRole(p) == "Murderer" then
+            FlingTarget(p)
+            break
+        end
+    end
+end)
+
+CreateButton(TabMurder, "FlingSheriff", function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and GetMurderRole(p) == "Sheriff" then
+            FlingTarget(p)
+            break
+        end
+    end
+end)
 
 CreateToggle(TabMurder, "MurderESP", false, function(v) MurderESPEnabled = v end)
 CreateToggle(TabMurder, "AimLockMurder", false, function(v) AimLockMurderEnabled = v end)
-CreateToggle(TabMurder, "AutoGetGun", false, function(v) AutoGetGunEnabled = v end)
 CreateToggle(TabMurder, "KillAura", false, function(v) KillAuraEnabled = v end)
-CreateToggle(TabMurder, "BringAll", false, function(v) BringAllEnabled = v end)
-
-CreateToggle(TabMurder, "LoopFling", false, function(v)
-    FlingEnabled = v
-    if Character and Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = Character.HumanoidRootPart
-        local angVel = hrp:FindFirstChild("FlingSpinVelocity")
-        if v then
-            if not angVel then
-                angVel = Instance.new("BodyAngularVelocity", hrp)
-                angVel.Name = "FlingSpinVelocity"
-                angVel.MaxTorque = Vector3.new(0, math.huge, 0)
-                angVel.AngularVelocity = Vector3.new(0, 99999, 0)
-            end
-        else
-            if angVel then angVel:Destroy() end
-        end
-    end
-end)
-
-CreateButton(TabMurder, "TpToMurder", function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and GetMurderRole(p) == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            if Character and Character:FindFirstChild("HumanoidRootPart") then
-                Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            end
-        end
-    end
-end)
-
-CreateButton(TabMurder, "TpToSheriff", function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and GetMurderRole(p) == "Sheriff" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            if Character and Character:FindFirstChild("HumanoidRootPart") then
-                Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            end
-        end
-    end
-end)
-
-CreateButton(TabMurder, "TpToGun", function()
-    local gun = GetDroppedGun()
-    if gun and Character and Character:FindFirstChild("HumanoidRootPart") then
-        Character.HumanoidRootPart.CFrame = gun.CFrame
-    end
-end)
 
 ----------------------------------------------------------------
--- [ 7. หมวดหมู่ที่ 4: เมนูฟาร์มทั้งหมด ]
+-- [ 8. Tab 4: Farm Menu ]
 ----------------------------------------------------------------
 local DeleteWallsEnabled = false
-local DeleteBrainrotBarrierEnabled = false
-
-local function RemoveTargetWalls()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "WallL" or v.Name == "WallR" then v:Destroy() end
-    end
-end
-
-CreateToggle(TabFarm, "DeleteWalls", false, function(v)
-    DeleteWallsEnabled = v
-    if v then RemoveTargetWalls() end
-end)
-
-local function RemoveBrainrotBarriers()
-    for _, v in pairs(workspace:GetDescendants()) do
-        local nameLower = string.lower(v.Name)
-        if nameLower:find("barrier") or nameLower:find("door") or nameLower == "wall" or v.Name == "DeliveryHitbox" then
-            if v:IsA("BasePart") then
-                v.CanCollide = false
-                v.Transparency = 1
-            elseif v:IsA("Model") then
-                v:Destroy()
-            end
-        end
-    end
-end
-
-CreateToggle(TabFarm, "DeleteBrainrotBarrier", false, function(v)
-    DeleteBrainrotBarrierEnabled = v
-    if v then RemoveBrainrotBarriers() end
-end)
+CreateToggle(TabFarm, "DeleteWalls", false, function(v) DeleteWallsEnabled = v end)
 
 ----------------------------------------------------------------
--- [ 8. หมวดหมู่ที่ 5: Setting Xerox ]
+-- [ 9. Tab 5: Setting Xerox & Fixed Potato Graphics ]
 ----------------------------------------------------------------
 local AntiKickEnabled = false
-local OldNamecall = nil
-
-local function EnableAntiKick()
-    if OldNamecall then return end
-    local rawMetatable = getrawmetatable or debug.getmetatable
-    local setReadOnly = setreadonly or make_writeable
-    
-    if rawMetatable and setReadOnly then
-        local gmt = rawMetatable(game)
-        OldNamecall = gmt.__namecall
-        setReadOnly(gmt, false)
-
-        gmt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            if AntiKickEnabled and string.lower(method) == "kick" then
-                warn("[Thailand XVP] Blocked a kick attempt!")
-                return nil
-            end
-            return OldNamecall(self, ...)
-        end)
-        setReadOnly(gmt, true)
-    end
-end
-
-CreateToggle(Tab3, "AntiKick", false, function(v)
-    AntiKickEnabled = v
-    if v then pcall(EnableAntiKick) end
-end)
+local OriginalMaterials = {}
+local PotatoGraphicsEnabled = false
 
 CreateToggle(Tab3, "Potato", false, function(v)
+    PotatoGraphicsEnabled = v
     if v then
+        -- Backup & Apply Potato SmoothPlastic
         for _, p in pairs(workspace:GetDescendants()) do
-            if p:IsA("BasePart") then p.Material = Enum.Material.SmoothPlastic end
+            if p:IsA("BasePart") then
+                if not OriginalMaterials[p] then OriginalMaterials[p] = p.Material end
+                p.Material = Enum.Material.SmoothPlastic
+            end
         end
+    else
+        -- Restore Original Materials
+        for part, mat in pairs(OriginalMaterials) do
+            if part and part.Parent then part.Material = mat end
+        end
+        OriginalMaterials = {}
     end
-end)
-
-local LangBtn = Instance.new("TextButton", Tab3)
-LangBtn.Size = UDim2.new(1, -10, 0, 36)
-LangBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-LangBtn.Text = "เปลี่ยนภาษา (Language): 🇹🇭 TH"
-LangBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
-LangBtn.Font = Enum.Font.Gotham
-LangBtn.TextSize = 12
-Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 5)
-
-LangBtn.MouseButton1Click:Connect(function()
-    CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
-    LangBtn.Text = "เปลี่ยนภาษา (Language): " .. ((CurrentLanguage == "TH") and "🇹🇭 TH" or "🇬🇧 ENG")
-    for _, func in pairs(TextObjects) do func() end
 end)
 
 CreateToggle(Tab3, "FullBright", false, function(v)
@@ -621,24 +553,25 @@ CreateToggle(Tab3, "FullBright", false, function(v)
 end)
 
 ----------------------------------------------------------------
--- [ 9. Loops & Render Logic ]
+-- [ 10. Core Loop Updates ]
 ----------------------------------------------------------------
-RunService.RenderStepped:Connect(function(dt)
+RunService.RenderStepped:Connect(function()
+    -- Speed & Jump
     if Character and Character:FindFirstChild("Humanoid") then
         local hum = Character.Humanoid
         hum.WalkSpeed = 16 + (SpeedLevel - 1) * 12
         hum.UseJumpPower = true
         hum.JumpPower = 50 + (JumpLevel - 1) * 20
-        hum.JumpHeight = 7.2 + (JumpLevel - 1) * 5
     end
 
+    -- Noclip
     if NoclipEnabled and Character then
         for _, p in pairs(Character:GetDescendants()) do
             if p:IsA("BasePart") then p.CanCollide = false end
         end
     end
 
-    -- Murder ESP & Standard ESP Logic
+    -- Murder ESP
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
@@ -659,8 +592,6 @@ RunService.RenderStepped:Connect(function(dt)
                 end
 
                 highlight.FillColor = col
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.3
                 highlight.Enabled = true
             else
                 if highlight then highlight.Enabled = false end
@@ -677,50 +608,10 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
     end
-
-    -- Kill Aura
-    if KillAuraEnabled and Character and Character:FindFirstChild("Knife") then
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                local dist = (plr.Character.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
-                if dist <= 18 then
-                    local knife = Character:FindFirstChild("Knife")
-                    knife:Activate()
-                end
-            end
-        end
-    end
-
-    -- Bring All Players
-    if BringAllEnabled and Character and Character:FindFirstChild("HumanoidRootPart") then
-        local myHrp = Character.HumanoidRootPart
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                pcall(function()
-                    plr.Character.HumanoidRootPart.CFrame = myHrp.CFrame * CFrame.new(0, 0, -2.5)
-                end)
-            end
-        end
-    end
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(0.3)
-        if DeleteWallsEnabled then RemoveTargetWalls() end
-        if DeleteBrainrotBarrierEnabled then RemoveBrainrotBarriers() end
-        
-        if AutoGetGunEnabled then
-            local gun = GetDroppedGun()
-            if gun and Character and Character:FindFirstChild("HumanoidRootPart") then
-                Character.HumanoidRootPart.CFrame = gun.CFrame
-            end
-        end
-    end
 end)
 
 ----------------------------------------------------------------
--- [ 10. Floating Button & Toggle GUI ]
+-- [ 11. Floating Open Button ]
 ----------------------------------------------------------------
 local ToggleBtn = Instance.new("ImageButton", ScreenGui)
 ToggleBtn.Name = "RayfieldFloatingButton"
@@ -738,12 +629,4 @@ CircleStroke.Thickness = 2
 
 ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
-end)
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed then
-        if input.KeyCode == Enum.KeyCode.Insert or input.KeyCode == Enum.KeyCode.RightControl then
-            MainFrame.Visible = not MainFrame.Visible
-        end
-    end
 end)
