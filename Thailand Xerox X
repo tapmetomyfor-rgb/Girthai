@@ -43,6 +43,7 @@ local AutoFlingLoop = false
 local SelectedTarget = nil
 
 local MurderESPEnabled = false
+local GunESPEnabled = false
 local AimLockMurderEnabled = false
 local CurveBulletEnabled = false
 
@@ -52,7 +53,7 @@ local PotatoEnabled = false
 local OriginalMaterials = {}
 
 ----------------------------------------------------------------
--- [ 🎨 สร้าง Window หลักในธีม x2zu Style ]
+-- [ 🎨 สร้าง Window หลัก ]
 ----------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
    Name = "x2zu [ Stellar ] | Thailand XVP",
@@ -63,41 +64,6 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false,
    Theme = "Default"
 })
-
-----------------------------------------------------------------
--- [ 🔘 ปุ่มย่อ/ขยาย UI แบบตรง (Floating Toggle Button Fix) ]
-----------------------------------------------------------------
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "x2zu_ToggleGui_Fix"
-pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
-if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
-
-local FloatingBtn = Instance.new("ImageButton", ScreenGui)
-FloatingBtn.Name = "x2zu_ToggleBtn"
-FloatingBtn.Size = UDim2.new(0, 48, 0, 48)
-FloatingBtn.Position = UDim2.new(0, 20, 0.5, -24)
-FloatingBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-FloatingBtn.Image = "rbxassetid://105059922903197"
-FloatingBtn.Active = true
-FloatingBtn.Draggable = true
-
-Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(1, 0)
-local BtnStroke = Instance.new("UIStroke", FloatingBtn)
-BtnStroke.Color = Color3.fromRGB(255, 45, 45) -- สีแดงสไตล์ x2zu
-BtnStroke.Thickness = 2
-
--- ระบบสั่ง ซ่อน/โชว์ UI โดยตรง
-local uiVisible = true
-FloatingBtn.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    uiVisible = not uiVisible
-    pcall(function()
-        local rayfieldGui = game:GetService("CoreGui"):FindFirstChild("Rayfield") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Rayfield")
-        if rayfieldGui then
-            rayfieldGui.Enabled = uiVisible
-        end
-    end)
-end)
 
 ----------------------------------------------------------------
 -- [ Engine: ระบบดีดคน (Push Fling Engine) ]
@@ -150,7 +116,7 @@ local function FlingTarget(targetPlayer)
 end
 
 ----------------------------------------------------------------
--- [ Engine: หาบทบาทฆาตกร / ตำรวจ ]
+-- [ Engine: ระบบค้นหาฆาตกร ตำรวจ และปืน ]
 ----------------------------------------------------------------
 local function GetMurdererPlayer()
     for _, plr in pairs(Players:GetPlayers()) do
@@ -174,6 +140,19 @@ local function GetSheriffPlayer()
         end
     end
     return nil
+end
+
+local function GetDroppedGun()
+    local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
+    if not gunDrop then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "GunDrop" or obj.Name == "Gun") and (obj:IsA("BasePart") or obj:IsA("Model")) then
+                gunDrop = obj
+                break
+            end
+        end
+    end
+    return gunDrop
 end
 
 local function GetMurderRole(plr)
@@ -269,7 +248,7 @@ TabPull:CreateButton({
 })
 
 TabPull:CreateButton({
-   Name = "🚀 ดีดเป้าหมายออกนอกแมพ (Fling)",
+   Name = "🚀 ดีดเป้าหมายออกนอกแมพ (Fling Target)",
    Callback = function()
       PlayClickSound()
       if SelectedTarget then FlingTarget(SelectedTarget) end
@@ -289,33 +268,77 @@ TabPull:CreateToggle({
 })
 
 ----------------------------------------------------------------
--- [ TAB 3: Murder Xerox 🔪 ]
+-- [ TAB 3: Murder Xerox 🔪 (อัปเดตฟีเจอร์เต็มรูปแบบ) ]
 ----------------------------------------------------------------
 local TabMurder = Window:CreateTab("Murder Xerox 🔪", 4483362456)
-TabMurder:CreateSection("วาร์ป & ไอเทม")
+
+TabMurder:CreateSection("จัดการปืน (Gun Controls)")
 
 TabMurder:CreateButton({
-   Name = "🔫 ดึงปืนที่ตกมาหาตัว",
+   Name = "🔫 ดึงปืนที่ตกมาหาตัว (Bring Gun)",
    Callback = function()
       PlayClickSound()
-      local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
-      if not gunDrop then
-          for _, obj in pairs(workspace:GetDescendants()) do
-              if (obj.Name == "GunDrop" or obj.Name == "Gun") and (obj:IsA("BasePart") or obj:IsA("Model")) then gunDrop = obj break end
-          end
-      end
-
+      local gunDrop = GetDroppedGun()
       local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
       if gunDrop and myHRP then
           local targetPos = myHRP.CFrame * CFrame.new(0, -2, 0)
-          if gunDrop:IsA("Model") then gunDrop:SetPrimaryPartCFrame(targetPos)
-          elseif gunDrop:IsA("BasePart") then gunDrop.CFrame = targetPos end
+          if gunDrop:IsA("Model") then 
+              gunDrop:SetPrimaryPartCFrame(targetPos)
+          elseif gunDrop:IsA("BasePart") then 
+              gunDrop.CFrame = targetPos 
+          end
       end
    end,
 })
 
 TabMurder:CreateButton({
-   Name = "🔪 วาร์ปไปหาฆาตกร",
+   Name = "⚡ วาร์ปไปหาปืนที่ตก (TP to Gun)",
+   Callback = function()
+      PlayClickSound()
+      local gunDrop = GetDroppedGun()
+      local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      if gunDrop and myHRP then
+          local gunCFrame = gunDrop:IsA("Model") and gunDrop:GetPrimaryPartCFrame() or gunDrop.CFrame
+          myHRP.CFrame = gunCFrame * CFrame.new(0, 2, 0)
+      end
+   end,
+})
+
+TabMurder:CreateToggle({
+   Name = "🌟 ESP มองเห็นปืนที่ตก (สีทอง)",
+   CurrentValue = false,
+   Callback = function(v)
+      PlayClickSound()
+      GunESPEnabled = v
+   end,
+})
+
+TabMurder:CreateSection("จัดการผู้เล่น (Murderer & Sheriff)")
+
+TabMurder:CreateButton({
+   Name = "🚀 ดีดฆาตกรออกนอกแมพ (Fling Murderer)",
+   Callback = function()
+      PlayClickSound()
+      local murderer = GetMurdererPlayer()
+      if murderer then
+          FlingTarget(murderer)
+      end
+   end,
+})
+
+TabMurder:CreateButton({
+   Name = "🚀 ดีดตำรวจออกนอกแมพ (Fling Sheriff)",
+   Callback = function()
+      PlayClickSound()
+      local sheriff = GetSheriffPlayer()
+      if sheriff then
+          FlingTarget(sheriff)
+      end
+   end,
+})
+
+TabMurder:CreateButton({
+   Name = "🔪 วาร์ปไปหาฆาตกร (TP Murderer)",
    Callback = function()
       PlayClickSound()
       local m = GetMurdererPlayer()
@@ -327,7 +350,7 @@ TabMurder:CreateButton({
 })
 
 TabMurder:CreateButton({
-   Name = "👮 วาร์ปไปหาตำรวจ",
+   Name = "👮 วาร์ปไปหาตำรวจ (TP Sheriff)",
    Callback = function()
       PlayClickSound()
       local s = GetSheriffPlayer()
@@ -338,10 +361,10 @@ TabMurder:CreateButton({
    end,
 })
 
-TabMurder:CreateSection("ระบบช่วยเล่น")
+TabMurder:CreateSection("ระบบช่วยเล่นอื่นๆ")
 
 TabMurder:CreateToggle({
-   Name = "🎯 ESP แยกบทบาท (ฆาตกร/ตำรวจ)",
+   Name = "🎯 ESP แยกบทบาทผู้เล่น (ฆาตกร/ตำรวจ)",
    CurrentValue = false,
    Callback = function(v) PlayClickSound() MurderESPEnabled = v end,
 })
@@ -473,6 +496,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
+    -- ระบบ ESP แสดงผลบทบาทผู้เล่น
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
@@ -493,6 +517,23 @@ RunService.RenderStepped:Connect(function()
             else
                 if highlight then highlight.Enabled = false end
             end
+        end
+    end
+
+    -- ระบบ ESP ปืนตกสีทอง
+    local droppedGun = GetDroppedGun()
+    if droppedGun then
+        local gunHighlight = droppedGun:FindFirstChild("XVP_GunHighlight")
+        if GunESPEnabled then
+            if not gunHighlight then
+                gunHighlight = Instance.new("Highlight", droppedGun)
+                gunHighlight.Name = "XVP_GunHighlight"
+                gunHighlight.FillColor = Color3.fromRGB(255, 215, 0) -- สีทอง
+                gunHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            end
+            gunHighlight.Enabled = true
+        else
+            if gunHighlight then gunHighlight.Enabled = false end
         end
     end
 end)
