@@ -1,4 +1,4 @@
--- [[ Thailand XVP - Rayfield Edition (V9 - Sound FX & Super Fling Fix) ]] --
+-- [[ Thailand XVP - Rayfield Edition (V11 - Kill Aura Moved to Murder Tab & Physics Fling) ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -17,7 +17,6 @@ local LogoAsset = "rbxassetid://94715455570142"
 ----------------------------------------------------------------
 -- [ 🔊 Sound System Setup ]
 ----------------------------------------------------------------
--- เล่นเสียงเมื่อรันสคริปต์ด้วย ID ที่ระบุ
 local InitSound = Instance.new("Sound")
 InitSound.Name = "XVP_InitSound"
 InitSound.SoundId = "rbxassetid://132948338000932"
@@ -25,10 +24,9 @@ InitSound.Volume = 2
 InitSound.Parent = SoundService
 InitSound:Play()
 
--- เสียงคลิกปุ่มทั่วไป
 local ClickSound = Instance.new("Sound")
 ClickSound.Name = "XVP_ClickSound"
-ClickSound.SoundId = "rbxassetid://6895079853" -- เสียง Click มาตรฐาน
+ClickSound.SoundId = "rbxassetid://6895079853"
 ClickSound.Volume = 0.5
 ClickSound.Parent = SoundService
 
@@ -74,7 +72,7 @@ HeaderLogo.Image = LogoAsset
 local TitleBar = Instance.new("TextLabel", TopBar)
 TitleBar.Size = UDim2.new(1, -50, 1, 0)
 TitleBar.Position = UDim2.new(0, 44, 0, 0)
-TitleBar.Text = "Thailand XVP  |  Rayfield (Sound FX & Super Fling V9)"
+TitleBar.Text = "Thailand XVP  |  Rayfield (Murderer All-In-One V11)"
 TitleBar.TextColor3 = Color3.fromRGB(235, 235, 235)
 TitleBar.TextSize = 14
 TitleBar.Font = Enum.Font.GothamBold
@@ -108,6 +106,7 @@ local LanguageData = {
         Noclip = "ทะลุกำแพง (Noclip)",
         Jump = "โดดสูง (ระดับ 1-10)",
         Invis = "หายตัว (Invisible)",
+        KillAura = "ออร่าฟันอัตโนมัติ (Kill Aura) ⚔️",
         ESP = "ESP สีตัวคน + ป้ายชื่อ",
         AntiKick = "กันโดนเตะ / กันแบน (Anti-Kick) 🛡️",
         Potato = "ภาพดินน้ำมัน (เปิด/ปิด ได้)",
@@ -135,6 +134,7 @@ local LanguageData = {
         Noclip = "Noclip",
         Jump = "JumpPower (Level 1-10)",
         Invis = "Invisible",
+        KillAura = "Auto Attack (Kill Aura) ⚔️",
         ESP = "Player Body Color ESP",
         AntiKick = "Anti-Kick Protection 🛡️",
         Potato = "Potato Graphics (Toggle)",
@@ -326,7 +326,7 @@ local function CreateButton(parent, langKey, callback)
 end
 
 ----------------------------------------------------------------
--- [ 4. 🔥 Improved Super Fling Engine (แก้เรื่องดีดไม่ปลิว) ]
+-- [ 4. 💥 Ultimate Physics Fling Engine ]
 ----------------------------------------------------------------
 local function RealFlingTarget(targetPlr)
     if not targetPlr or not targetPlr.Character or not targetPlr.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -336,42 +336,43 @@ local function RealFlingTarget(targetPlr)
     local targetHrp = targetPlr.Character.HumanoidRootPart
     local oldCFrame = myHrp.CFrame
     
-    -- ปิด Collision ชั่วคราวเพื่อไม่ให้ตัวเราติด
-    for _, part in pairs(Character:GetChildren()) do
-        if part:IsA("BasePart") then part.CanCollide = false end
-    end
+    local vel = Instance.new("BodyVelocity")
+    vel.Name = "XVP_FlingVelocity"
+    vel.Velocity = Vector3.new(0, 99999, 0)
+    vel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    vel.Parent = myHrp
 
-    local bav = Instance.new("BodyAngularVelocity")
-    bav.Name = "XVP_FlingVelocity"
-    bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    bav.AngularVelocity = Vector3.new(999999, 999999, 999999) -- ความเร็วหมุนระดับอัลติเมท
-    bav.Parent = myHrp
+    local rot = Instance.new("BodyAngularVelocity")
+    rot.Name = "XVP_FlingRot"
+    rot.AngularVelocity = Vector3.new(99999, 99999, 99999)
+    rot.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    rot.Parent = myHrp
 
     local startTime = tick()
     task.spawn(function()
-        while tick() - startTime < 2.0 do
+        while tick() - startTime < 1.5 do
             if not targetHrp or not targetHrp.Parent then break end
-            
-            -- ปรับแรงเหวี่ยงอัดกระแทก
-            myHrp.AssemblyAngularVelocity = Vector3.new(999999, 999999, 999999)
-            myHrp.CFrame = targetHrp.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
+            myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 0) * CFrame.Angles(math.rad(math.random(-360,360)), math.rad(math.random(-360,360)), math.rad(math.random(-360,360)))
+            myHrp.Velocity = Vector3.new(9999, 9999, 9999)
             RunService.RenderStepped:Wait()
         end
         
-        bav:Destroy()
-        myHrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        vel:Destroy()
+        rot:Destroy()
         myHrp.Velocity = Vector3.new(0, 0, 0)
+        myHrp.RotVelocity = Vector3.new(0, 0, 0)
         myHrp.CFrame = oldCFrame
     end)
 end
 
 ----------------------------------------------------------------
--- [ 5. Tab 1 & Tab 2 ]
+-- [ 5. Tab 1 & Tab 2 (Menu & PVP General) ]
 ----------------------------------------------------------------
 local SpeedLevel = 1
 local NoclipEnabled = false
 local JumpLevel = 1
 local ESPEnabled = false
+local KillAuraEnabled = false
 
 CreateSlider(Tab1, "Speed", 1, 10, 1, function(v) SpeedLevel = v end)
 CreateToggle(Tab1, "Noclip", false, function(v) NoclipEnabled = v end)
@@ -384,10 +385,11 @@ CreateToggle(Tab1, "Invis", false, function(v)
     end
 end)
 
+-- Tab 2 Features
 CreateToggle(Tab2, "ESP", false, function(v) ESPEnabled = v end)
 
 ----------------------------------------------------------------
--- [ 6. 🔪 Murder Xerox Functions ]
+-- [ 6. 🔪 Murder Xerox Functions (Kill Aura Integrated Here!) ]
 ----------------------------------------------------------------
 local MurderESPEnabled = false
 local AimLockMurderEnabled = false
@@ -484,7 +486,9 @@ ShootBtn.MouseButton1Click:Connect(function()
     ShootMurdererCurve()
 end)
 
--- Buttons Setup
+-- 🔥 [ย้าย Kill Aura มาใส่ใน Tab Murder]
+CreateToggle(TabMurder, "KillAura", false, function(v) KillAuraEnabled = v end)
+
 CreateButton(TabMurder, "BringGun", function()
     local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
     if not gunDrop then
@@ -671,7 +675,7 @@ CreateToggle(Tab3, "FullBright", false, function(v)
 end)
 
 ----------------------------------------------------------------
--- [ 8. Render Loops & Smooth Aim ]
+-- [ 8. Render Loops & Kill Aura Engine ]
 ----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
     if Character and Character:FindFirstChild("Humanoid") then
@@ -687,6 +691,25 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
+    -- ⚔️ Kill Aura Loop
+    if KillAuraEnabled and Character then
+        local tool = Character:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
+        if tool then
+            if tool.Parent == LocalPlayer.Backpack then
+                Character.Humanoid:EquipTool(tool)
+            end
+            for _, target in pairs(Players:GetPlayers()) do
+                if target ~= LocalPlayer and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (target.Character.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
+                    if dist <= 18 then -- ระยะฟันอัตโนมัติ 18 หน่วย
+                        tool:Activate()
+                    end
+                end
+            end
+        end
+    end
+
+    -- ESP & Roles
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
