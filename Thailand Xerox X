@@ -1,13 +1,36 @@
--- โหลด UI Library (x2zu Framework)
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/x2zu/OPEN-SOURCE-UI-ROBLOX/refs/heads/main/X2ZU%20UI%20ROBLOX%20OPEN%20SOURCE/DummyUi-leak-by-x2zu/fetching-main/Tools/Framework.luau"))()
+-- โหลด Rayfield UI Library (เสถียร รันง่ายที่สุด)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- บริการหลักของ Roblox
+-- บริการหลัก Roblox
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
+local SoundService = game:GetService("SoundService")
 local LocalPlayer = Players.LocalPlayer
 
--- ตัวแปรสถานะระบบต่างๆ
+----------------------------------------------------------------
+-- [ 🔊 ระบบเสียง (Sound System) ]
+----------------------------------------------------------------
+local function PlaySound(soundId, volume)
+    task.spawn(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = soundId or "rbxassetid://6895079853"
+        sound.Volume = volume or 1
+        sound.Parent = SoundService
+        sound:Play()
+        sound.Ended:Connect(function() sound:Destroy() end)
+    end)
+end
+
+local function PlayClickSound()
+    PlaySound("rbxassetid://6895079853", 0.6)
+end
+
+local function PlayFlingSound()
+    PlaySound("rbxassetid://132948338000932", 1.2)
+end
+
+-- ตัวแปรสถานะระบบ
 local WalkSpeedValue = 16
 local JumpPowerValue = 50
 local NoclipEnabled = false
@@ -26,24 +49,51 @@ local FullBrightEnabled = false
 local PotatoEnabled = false
 local OriginalMaterials = {}
 
--- สร้าง Window หลัก
-local Window = Library:Window({
-    Title = "Thailand XVP | x2zu Complete Edition",
-    Desc = "รวมทุกฟีเจอร์ (Movement, Pull, Murder, Settings)",
-    Icon = 105059922903197,
-    Theme = "Dark",
-    Config = {
-        Keybind = Enum.KeyCode.RightControl,
-        Size = UDim2.new(0, 520, 0, 440)
-    },
-    CloseUIButton = {
-        Enabled = true,
-        Text = "XVP"
-    }
+----------------------------------------------------------------
+-- [ 🎨 สร้าง Window หลักในธีม x2zu (Dark & Red Stellar) ]
+----------------------------------------------------------------
+local Window = Rayfield:CreateWindow({
+   Name = "x2zu [ Stellar ] | Thailand XVP",
+   LoadingTitle = "x2zu on top...",
+   LoadingSubtitle = "by XVP Team",
+   ConfigurationSaving = { Enabled = false },
+   Discord = { Enabled = false },
+   KeySystem = false,
+   -- ปรับธีมแต่งสีให้ใกล้เคียง x2zu Dark Theme
+   Theme = "Default"
 })
 
 ----------------------------------------------------------------
--- [ Engine: ระบบดีดคน (Push Fling) ]
+-- [ 🔘 ปุ่มย่อ/ขยาย UI แบบมีภาพ (Floating Toggle Button) ]
+----------------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "x2zu_RayfieldToggleGui"
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+local FloatingBtn = Instance.new("ImageButton", ScreenGui)
+FloatingBtn.Name = "x2zu_ToggleBtn"
+FloatingBtn.Size = UDim2.new(0, 48, 0, 48)
+FloatingBtn.Position = UDim2.new(0, 20, 0.5, -24)
+FloatingBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+FloatingBtn.Image = "rbxassetid://105059922903197"
+FloatingBtn.Active = true
+FloatingBtn.Draggable = true
+
+Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(1, 0)
+local BtnStroke = Instance.new("UIStroke", FloatingBtn)
+BtnStroke.Color = Color3.fromRGB(255, 45, 45) -- สีแดง Accent แบบ x2zu
+BtnStroke.Thickness = 2
+
+FloatingBtn.MouseButton1Click:Connect(function()
+    PlayClickSound()
+    -- สลับเปิด/ปิด Rayfield UI ผ่าน Virtual Input
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.K, false, game)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.K, false, game)
+end)
+
+----------------------------------------------------------------
+-- [ Engine: ระบบดีดคน (Push Fling Engine) ]
 ----------------------------------------------------------------
 local isFlinging = false
 
@@ -57,6 +107,7 @@ local function FlingTarget(targetPlayer)
     if not targetHRP or not myHRP then return end
     
     isFlinging = true
+    PlayFlingSound()
     local oldCFrame = myHRP.CFrame
     
     local bV = Instance.new("BodyVelocity")
@@ -92,7 +143,7 @@ local function FlingTarget(targetPlayer)
 end
 
 ----------------------------------------------------------------
--- [ Engine: ระบบหาฆาตกรและตำรวจ ]
+-- [ Engine: หาบทบาทฆาตกร / ตำรวจ ]
 ----------------------------------------------------------------
 local function GetMurdererPlayer()
     for _, plr in pairs(Players:GetPlayers()) do
@@ -132,319 +183,242 @@ local function GetMurderRole(plr)
 end
 
 ----------------------------------------------------------------
--- [ TAB 1: Main Movement ]
+-- [ TAB 1: Main Xerox (Movement) ]
 ----------------------------------------------------------------
-local TabMain = Window:Tab({Title = "Main Xerox", Icon = "rbxassetid://6035198888"}) do
-    TabMain:Section({Title = "การเคลื่อนที่ & สถานะตัวละคร"})
+local TabMain = Window:CreateTab("Main Xerox 🏃", 4483362456)
+TabMain:CreateSection("การเคลื่อนที่ & ตัวละคร")
 
-    TabMain:Slider({
-        Title = "วิ่งเร็ว (WalkSpeed)",
-        Min = 16,
-        Max = 150,
-        Rounding = 0,
-        Value = 16,
-        Callback = function(val)
-            WalkSpeedValue = val
-        end
-    })
+TabMain:CreateSlider({
+   Name = "วิ่งเร็ว (WalkSpeed)",
+   Range = {16, 150},
+   Increment = 1,
+   CurrentValue = 16,
+   Callback = function(v) WalkSpeedValue = v end,
+})
 
-    TabMain:Slider({
-        Title = "กระโดดสูง (JumpPower)",
-        Min = 50,
-        Max = 250,
-        Rounding = 0,
-        Value = 50,
-        Callback = function(val)
-            JumpPowerValue = val
-        end
-    })
+TabMain:CreateSlider({
+   Name = "กระโดดสูง (JumpPower)",
+   Range = {50, 250},
+   Increment = 1,
+   CurrentValue = 50,
+   Callback = function(v) JumpPowerValue = v end,
+})
 
-    TabMain:Toggle({
-        Title = "ทะลุกำแพง (Noclip)",
-        Desc = "เดินทะลุสิ่งกีดขวางได้ทุกชนิด",
-        Value = false,
-        Callback = function(v)
-            NoclipEnabled = v
-        end
-    })
+TabMain:CreateToggle({
+   Name = "เดินทะลุกำแพง (Noclip)",
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() NoclipEnabled = v end,
+})
 
-    TabMain:Toggle({
-        Title = "หายตัว (Invisible)",
-        Desc = "ปรับความโปร่งแสงตัวละคร",
-        Value = false,
-        Callback = function(v)
-            InvisibleEnabled = v
-            local myChar = LocalPlayer.Character
-            if myChar then
-                for _, p in pairs(myChar:GetDescendants()) do
-                    if p:IsA("BasePart") or p:IsA("Decal") then 
-                        p.Transparency = v and 1 or 0 
-                    end
-                end
-            end
-        end
-    })
+TabMain:CreateToggle({
+   Name = "หายตัว (Invisible)",
+   CurrentValue = false,
+   Callback = function(v)
+      PlayClickSound()
+      InvisibleEnabled = v
+      local myChar = LocalPlayer.Character
+      if myChar then
+          for _, p in pairs(myChar:GetDescendants()) do
+              if p:IsA("BasePart") or p:IsA("Decal") then p.Transparency = v and 1 or 0 end
+          end
+      end
+   end,
+})
+
+----------------------------------------------------------------
+-- [ TAB 2: Pull & Control 🧲 ]
+----------------------------------------------------------------
+local TabPull = Window:CreateTab("Pull & Control 🧲", 4483362456)
+TabPull:CreateSection("เลือกเป้าหมาย")
+
+local playerNames = {}
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then table.insert(playerNames, p.Name) end
 end
 
-Window:Line()
+TabPull:CreateDropdown({
+   Name = "เลือกเป้าหมายคนในแมพ",
+   Options = playerNames,
+   CurrentOption = "",
+   Callback = function(Option)
+      PlayClickSound()
+      if type(Option) == "table" then Option = Option[1] end
+      SelectedTarget = Players:FindFirstChild(Option)
+   end,
+})
+
+TabPull:CreateSection("คำสั่งการดึง & ดีดคน")
+
+TabPull:CreateButton({
+   Name = "🧲 ดึงเป้าหมายมาตรงหน้า",
+   Callback = function()
+      PlayClickSound()
+      if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
+          local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+          if myHRP then SelectedTarget.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3) end
+      end
+   end,
+})
+
+TabPull:CreateButton({
+   Name = "🚀 ดีดเป้าหมายออกนอกแมพ (Fling)",
+   Callback = function()
+      PlayClickSound()
+      if SelectedTarget then FlingTarget(SelectedTarget) end
+   end,
+})
+
+TabPull:CreateToggle({
+   Name = "🔄 ลูปดีดเป้าหมายเรื่อยๆ (Loop Fling)",
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() AutoFlingLoop = v end,
+})
+
+TabPull:CreateToggle({
+   Name = "⚔️ ดึงทุกคนในแมพมาฆ่า (Kill Aura Pull)",
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() KillAuraPull = v end,
+})
 
 ----------------------------------------------------------------
--- [ TAB 2: Pull & Fling Systems ]
+-- [ TAB 3: Murder Xerox 🔪 ]
 ----------------------------------------------------------------
-local TabPull = Window:Tab({Title = "Pull & Control 🧲", Icon = "rbxassetid://4483362456"}) do
-    TabPull:Section({Title = "ระบบเลือกเป้าหมาย"})
+local TabMurder = Window:CreateTab("Murder Xerox 🔪", 4483362456)
+TabMurder:CreateSection("วาร์ป & ไอเทม")
 
-    local playerNames = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then table.insert(playerNames, p.Name) end
-    end
+TabMurder:CreateButton({
+   Name = "🔫 ดึงปืนที่ตกมาหาตัว",
+   Callback = function()
+      PlayClickSound()
+      local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
+      if not gunDrop then
+          for _, obj in pairs(workspace:GetDescendants()) do
+              if (obj.Name == "GunDrop" or obj.Name == "Gun") and (obj:IsA("BasePart") or obj:IsA("Model")) then gunDrop = obj break end
+          end
+      end
 
-    TabPull:Dropdown({
-        Title = "เลือกผู้เล่นในแมพ",
-        List = playerNames,
-        Value = "",
-        Callback = function(choice)
-            SelectedTarget = Players:FindFirstChild(choice)
-            Window:Notify({Title = "Target Selected", Desc = "เลือก: " .. choice, Time = 2})
-        end
-    })
+      local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      if gunDrop and myHRP then
+          local targetPos = myHRP.CFrame * CFrame.new(0, -2, 0)
+          if gunDrop:IsA("Model") then gunDrop:SetPrimaryPartCFrame(targetPos)
+          elseif gunDrop:IsA("BasePart") then gunDrop.CFrame = targetPos end
+      end
+   end,
+})
 
-    TabPull:Textbox({
-        Title = "พิมพ์ค้นหาชื่อผู้เล่น",
-        Desc = "พิมพ์แค่ตัวอักษรหน้าของชื่อได้",
-        Placeholder = "Enter player name...",
-        Value = "",
-        ClearTextOnFocus = false,
-        Callback = function(text)
-            if text == "" then return end
-            for _, p in pairs(Players:GetPlayers()) do
-                if string.lower(string.sub(p.Name, 1, #text)) == string.lower(text) then
-                    SelectedTarget = p
-                    Window:Notify({Title = "Target Found", Desc = "เป้าหมาย: " .. p.Name, Time = 2})
-                    break
-                end
-            end
-        end
-    })
+TabMurder:CreateButton({
+   Name = "🔪 วาร์ปไปหาฆาตกร",
+   Callback = function()
+      PlayClickSound()
+      local m = GetMurdererPlayer()
+      local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") and myHRP then
+          myHRP.CFrame = m.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+      end
+   end,
+})
 
-    TabPull:Section({Title = "คำสั่งการดึง & ดีด"})
+TabMurder:CreateButton({
+   Name = "👮 วาร์ปไปหาตำรวจ",
+   Callback = function()
+      PlayClickSound()
+      local s = GetSheriffPlayer()
+      local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      if s and s.Character and s.Character:FindFirstChild("HumanoidRootPart") and myHRP then
+          myHRP.CFrame = s.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+      end
+   end,
+})
 
-    TabPull:Button({
-        Title = "🧲 ดึงผู้เล่นที่เลือกมาตรงหน้า",
-        Desc = "วาร์ปเป้าหมายมาต่อหน้าชั่วคราว",
-        Callback = function()
-            if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
-                local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if myHRP then
-                    SelectedTarget.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3)
-                end
-            else
-                Window:Notify({Title = "Error", Desc = "กรุณาเลือกเป้าหมายก่อน!", Time = 3})
-            end
-        end
-    })
+TabMurder:CreateSection("ระบบช่วยเล่น")
 
-    TabPull:Button({
-        Title = "🚀 ดีดผู้เล่นออกนอกแมพ (Fling)",
-        Desc = "วาร์ปไปกระแทกเป้าหมายให้กระเด็นตกแมพ",
-        Callback = function()
-            if SelectedTarget then
-                FlingTarget(SelectedTarget)
-            else
-                Window:Notify({Title = "Error", Desc = "กรุณาเลือกเป้าหมายก่อน!", Time = 3})
-            end
-        end
-    })
+TabMurder:CreateToggle({
+   Name = "🎯 ESP แยกบทบาท (ฆาตกร/ตำรวจ)",
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() MurderESPEnabled = v end,
+})
 
-    TabPull:Toggle({
-        Title = "🔄 ลูปดีดเป้าหมายอัตโนมัติ (Loop Fling)",
-        Desc = "ถ้าเป้าหมายเกิดใหม่จะตามไปดีดเรื่อยๆ",
-        Value = false,
-        Callback = function(v)
-            AutoFlingLoop = v
-        end
-    })
+TabMurder:CreateToggle({
+   Name = "🌀 ยิงกระสุนโค้ง (Curve Bullet)",
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() CurveBulletEnabled = v end,
+})
 
-    TabPull:Toggle({
-        Title = "⚔️ ดึงทุกคนในแมพมาฆ่า (Kill Aura Pull)",
-        Desc = "ลากผู้เล่นทุกคนมาลอยตรงหน้าเราตลอดเวลา",
-        Value = false,
-        Callback = function(v)
-            KillAuraPull = v
-        end
-    })
-end
-
-Window:Line()
+TabMurder:CreateToggle({
+   Name = "🔪 ล็อคเป้าฆาตกร (AimLock)",
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() AimLockMurderEnabled = v end,
+})
 
 ----------------------------------------------------------------
--- [ TAB 3: Murder Mystery Xerox ]
+-- [ TAB 4: Setting Xerox ⚙️ ]
 ----------------------------------------------------------------
-local TabMurder = Window:Tab({Title = "Murder Xerox 🔪", Icon = "rbxassetid://105059922903197"}) do
-    TabMurder:Section({Title = "การวาร์ปและไอเทม"})
+local TabSettings = Window:CreateTab("Setting Xerox ⚙️", 4483362456)
+TabSettings:CreateSection("การป้องกัน & กราฟิก")
 
-    TabMurder:Button({
-        Title = "🔫 ดึงปืนที่ตกมาหาตัว (Bring Gun)",
-        Desc = "ย้ายตำแหน่งปืนที่ตกอยู่มาไว้ที่เท้า",
-        Callback = function()
-            local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
-            if not gunDrop then
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    if (obj.Name == "GunDrop" or obj.Name == "Gun") and (obj:IsA("BasePart") or obj:IsA("Model")) then
-                        gunDrop = obj
-                        break
-                    end
-                end
-            end
+TabSettings:CreateToggle({
+   Name = "🛡️ กันโดนเตะ (Anti-Kick)",
+   CurrentValue = false,
+   Callback = function(v)
+      PlayClickSound()
+      AntiKickEnabled = v
+      if v then
+          local rawMetatable = getrawmetatable or debug.getmetatable
+          local setReadOnly = setreadonly or make_writeable
+          if rawMetatable and setReadOnly then
+              local gmt = rawMetatable(game)
+              local oldNamecall = gmt.__namecall
+              setReadOnly(gmt, false)
+              gmt.__namecall = newcclosure(function(self, ...)
+                  if AntiKickEnabled and string.lower(getnamecallmethod()) == "kick" then return nil end
+                  return oldNamecall(self, ...)
+              end)
+              setReadOnly(gmt, true)
+          end
+      end
+   end,
+})
 
-            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if gunDrop and myHRP then
-                local targetPos = myHRP.CFrame * CFrame.new(0, -2, 0)
-                if gunDrop:IsA("Model") then 
-                    gunDrop:SetPrimaryPartCFrame(targetPos)
-                elseif gunDrop:IsA("BasePart") then 
-                    gunDrop.CFrame = targetPos 
-                end
-                Window:Notify({Title = "Success", Desc = "ดึงปืนเรียบร้อยแล้ว!", Time = 2})
-            else
-                Window:Notify({Title = "Error", Desc = "ไม่พบปืนที่ตกอยู่ในแมพ!", Time = 3})
-            end
-        end
-    })
+TabSettings:CreateToggle({
+   Name = "🥔 ภาพดินน้ำมัน (Potato Graphics)",
+   CurrentValue = false,
+   Callback = function(v)
+      PlayClickSound()
+      PotatoEnabled = v
+      if v then
+          for _, p in pairs(workspace:GetDescendants()) do
+              if p:IsA("BasePart") then
+                  if not OriginalMaterials[p] then OriginalMaterials[p] = p.Material end
+                  p.Material = Enum.Material.SmoothPlastic
+              end
+          end
+      else
+          for part, mat in pairs(OriginalMaterials) do if part and part.Parent then part.Material = mat end end
+          OriginalMaterials = {}
+      end
+   end,
+})
 
-    TabMurder:Button({
-        Title = "🔪 วาร์ปไปหาฆาตกร (TP Murderer)",
-        Callback = function()
-            local m = GetMurdererPlayer()
-            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") and myHRP then
-                myHRP.CFrame = m.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            else
-                Window:Notify({Title = "Error", Desc = "ยังไม่พบตัวฆาตกร!", Time = 3})
-            end
-        end
-    })
+TabSettings:CreateToggle({
+   Name = "💡 เพิ่มแสงสว่าง (FullBright)",
+   CurrentValue = false,
+   Callback = function(v)
+      PlayClickSound()
+      FullBrightEnabled = v
+      Lighting.Brightness = v and 2 or 1
+      Lighting.GlobalShadows = not v
+   end,
+})
 
-    TabMurder:Button({
-        Title = "👮 วาร์ปไปหาตำรวจ (TP Sheriff)",
-        Callback = function()
-            local s = GetSheriffPlayer()
-            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if s and s.Character and s.Character:FindFirstChild("HumanoidRootPart") and myHRP then
-                myHRP.CFrame = s.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            else
-                Window:Notify({Title = "Error", Desc = "ยังไม่พบตัวตำรวจ!", Time = 3})
-            end
-        end
-    })
-
-    TabMurder:Section({Title = "ระบบช่วยเหลือการยิง & มอง"})
-
-    TabMurder:Toggle({
-        Title = "🎯 ESP แยกบทบาท (ฆาตกร/ตำรวจ)",
-        Desc = "ฆาตกร = สีแดง, ตำรวจ = สีฟ้า, คนธรรมดา = สีเขียว",
-        Value = false,
-        Callback = function(v)
-            MurderESPEnabled = v
-        end
-    })
-
-    TabMurder:Toggle({
-        Title = "🌀 ยิงกระสุนโค้ง (Curve Bullet)",
-        Desc = "กระสุนจะเลี้ยวเข้าเป้าหมายให้อัตโนมัติ",
-        Value = false,
-        Callback = function(v)
-            CurveBulletEnabled = v
-        end
-    })
-
-    TabMurder:Toggle({
-        Title = "🔪 ล็อคเป้าฆาตกร (AimLock)",
-        Desc = "หันกล้องไปทางฆาตกรตลอดเวลา",
-        Value = false,
-        Callback = function(v)
-            AimLockMurderEnabled = v
-        end
-    })
-end
-
-Window:Line()
-
-----------------------------------------------------------------
--- [ TAB 4: Settings & Misc ]
-----------------------------------------------------------------
-local TabSettings = Window:Tab({Title = "Setting Xerox ⚙️", Icon = "rbxassetid://6031280882"}) do
-    TabSettings:Section({Title = "การป้องกัน & กราฟิก"})
-
-    TabSettings:Toggle({
-        Title = "🛡️ กันโดนเตะ / กันแบน (Anti-Kick)",
-        Value = false,
-        Callback = function(v)
-            AntiKickEnabled = v
-            if v then
-                local rawMetatable = getrawmetatable or debug.getmetatable
-                local setReadOnly = setreadonly or make_writeable
-                if rawMetatable and setReadOnly then
-                    local gmt = rawMetatable(game)
-                    local oldNamecall = gmt.__namecall
-                    setReadOnly(gmt, false)
-
-                    gmt.__namecall = newcclosure(function(self, ...)
-                        local method = getnamecallmethod()
-                        if AntiKickEnabled and string.lower(method) == "kick" then
-                            return nil
-                        end
-                        return oldNamecall(self, ...)
-                    end)
-                    setReadOnly(gmt, true)
-                end
-            end
-        end
-    })
-
-    TabSettings:Toggle({
-        Title = "🥔 ภาพดินน้ำมัน (Potato Graphics)",
-        Desc = "ช่วยลดอาการแลค ปรับทุกอย่างเป็น SmoothPlastic",
-        Value = false,
-        Callback = function(v)
-            PotatoEnabled = v
-            if v then
-                for _, p in pairs(workspace:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        if not OriginalMaterials[p] then OriginalMaterials[p] = p.Material end
-                        p.Material = Enum.Material.SmoothPlastic
-                    end
-                end
-            else
-                for part, mat in pairs(OriginalMaterials) do
-                    if part and part.Parent then part.Material = mat end
-                end
-                OriginalMaterials = {}
-            end
-        end
-    })
-
-    TabSettings:Toggle({
-        Title = "💡 เพิ่มแสงสว่าง (FullBright)",
-        Desc = "มองเห็นในที่มืดได้ชัดเจน",
-        Value = false,
-        Callback = function(v)
-            FullBrightEnabled = v
-            Lighting.Brightness = v and 2 or 1
-            Lighting.GlobalShadows = not v
-        end
-    })
-
-    TabSettings:Button({
-        Title = "🧱 ลบกำแพงแมพออก (Delete Walls)",
-        Callback = function()
-            for _, p in pairs(workspace:GetDescendants()) do
-                if p.Name == "WallL" or p.Name == "WallR" then p:Destroy() end
-            end
-            Window:Notify({Title = "Success", Desc = "ลบกำแพงแมพออกเรียบร้อย!", Time = 2})
-        end
-    })
-end
+TabSettings:CreateButton({
+   Name = "🧱 ลบกำแพงแมพออก (Delete Walls)",
+   Callback = function()
+      PlayClickSound()
+      for _, p in pairs(workspace:GetDescendants()) do
+          if p.Name == "WallL" or p.Name == "WallR" then p:Destroy() end
+      end
+   end,
+})
 
 ----------------------------------------------------------------
 -- [ Core Loop System ]
@@ -455,44 +429,33 @@ RunService.RenderStepped:Connect(function()
     local myHRP = myChar:FindFirstChild("HumanoidRootPart")
     local myHum = myChar:FindFirstChildOfClass("Humanoid")
     
-    -- ปรับค่า WalkSpeed & JumpPower
     if myHum then
         if WalkSpeedValue > 16 then myHum.WalkSpeed = WalkSpeedValue end
         myHum.UseJumpPower = true
         if JumpPowerValue > 50 then myHum.JumpPower = JumpPowerValue end
     end
     
-    -- Noclip Logic
     if NoclipEnabled then
         for _, part in pairs(myChar:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
-            end
+            if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
         end
     end
 
-    -- Kill Aura Pull All
     if KillAuraPull and myHRP then
         local tool = myChar:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-        if tool and tool.Parent == LocalPlayer.Backpack then
-            myHum:EquipTool(tool)
-        end
-
+        if tool and tool.Parent == LocalPlayer.Backpack then myHum:EquipTool(tool) end
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 p.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3.5)
             end
         end
-
         if tool then tool:Activate() end
     end
 
-    -- Auto Loop Fling
     if AutoFlingLoop and SelectedTarget and not isFlinging then
         FlingTarget(SelectedTarget)
     end
 
-    -- AimLock Murderer
     if AimLockMurderEnabled then
         local m = GetMurdererPlayer()
         if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") then
@@ -500,7 +463,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ESP System Engine
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
@@ -513,13 +475,9 @@ RunService.RenderStepped:Connect(function()
                 end
                 
                 local role = GetMurderRole(plr)
-                if role == "Murderer" then 
-                    highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                elseif role == "Sheriff" then 
-                    highlight.FillColor = Color3.fromRGB(0, 150, 255)
-                else 
-                    highlight.FillColor = Color3.fromRGB(0, 255, 120) 
-                end
+                if role == "Murderer" then highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                elseif role == "Sheriff" then highlight.FillColor = Color3.fromRGB(0, 150, 255)
+                else highlight.FillColor = Color3.fromRGB(0, 255, 120) end
 
                 highlight.Enabled = true
             else
@@ -529,9 +487,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- แจ้งเตือนเมื่อโหลดสำเร็จ
-Window:Notify({
-    Title = "Thailand XVP V15",
-    Desc = "ย้ายฟังก์ชันทั้งหมดมาใส่ x2zu UI เรียบร้อยแล้ว!",
-    Time = 4
-})
+PlaySound("rbxassetid://132948338000932", 1.5)
