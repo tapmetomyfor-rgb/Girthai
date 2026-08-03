@@ -1,4 +1,4 @@
--- [[ Thailand XVP - Rayfield Edition (With Boombox System) ]] --
+-- [[ Thailand XVP - Rayfield Edition (With Murderer Lock Aimbot) ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -16,7 +16,7 @@ LocalPlayer.CharacterAdded:Connect(function(c) Character = c end)
 local LogoAsset = "rbxassetid://94715455570142"
 
 ----------------------------------------------------------------
--- [ 1. ScreenGui & Rayfield-Style Main Frame ]
+-- [ 1. ScreenGui & Main Frame ]
 ----------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ThailandXVP_Rayfield_Gui"
@@ -25,8 +25,8 @@ if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("Player
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 540, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -270, 0.5, -180)
+MainFrame.Size = UDim2.new(0, 540, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -270, 0.5, -190)
 MainFrame.BackgroundColor3 = Color3.fromRGB(21, 21, 21)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -80,6 +80,7 @@ local LanguageData = {
     TH = {
         Tab1 = "Menu Xerox",
         Tab2 = "PVP Xerox VP",
+        TabMurder = "Murder Xerox 🔪",
         TabFarm = "เมนูฟาร์มทั้งหมด",
         Tab3 = "Setting Xerox",
         Speed = "วิ่งเร็ว (ระดับ 1-10)",
@@ -98,11 +99,23 @@ local LanguageData = {
         Aimbot = "Aimbot ล็อคเป้าหมายกลางจอ",
         AntiKick = "กันโดนเตะ / กันแบน (Anti-Kick) 🛡️",
         Potato = "ภาพดินน้ำมัน (Potato Graphics)",
-        FullBright = "เพิ่มแสง (FullBright)"
+        FullBright = "เพิ่มแสง (FullBright)",
+        
+        -- Murder Features
+        MurderESP = "ESP แยกบทบาท (ฆาตกร/ตำรวจ) 🎯",
+        AutoGetGun = "วาร์ปเก็บปืนอัตโนมัติ 🔫",
+        TpToMurder = "วาร์ปไปหาฆาตกร 🔪",
+        TpToSheriff = "วาร์ปไปหานายอำเภอ 👮",
+        TpToGun = "วาร์ปไปหาปืน 🔫",
+        KillAura = "Kill Aura (ฟันใกล้อัตโนมัติ) ⚔️",
+        BringAll = "ดึงทุกคนมาตรงหน้า (Bring All) 🧲",
+        LoopFling = "หมุนตัวชนคนปลิว (Loop Fling) 🌀",
+        AimLockMurder = "Aimbot ล็อคหัวฆาตกรอัตโนมัติ 🎯"
     },
     ENG = {
         Tab1 = "Menu Xerox",
         Tab2 = "PVP Xerox VP",
+        TabMurder = "Murder Xerox 🔪",
         TabFarm = "All Farm Menu",
         Tab3 = "Setting Xerox",
         Speed = "WalkSpeed (Level 1-10)",
@@ -121,7 +134,18 @@ local LanguageData = {
         Aimbot = "Aimbot (Center Lock)",
         AntiKick = "Anti-Kick / Anti-Ban Protection 🛡️",
         Potato = "Potato Graphics",
-        FullBright = "FullBright"
+        FullBright = "FullBright",
+        
+        -- Murder Features
+        MurderESP = "Role ESP (Murderer/Sheriff) 🎯",
+        AutoGetGun = "Auto Fetch Dropped Gun 🔫",
+        TpToMurder = "TP to Murderer 🔪",
+        TpToSheriff = "TP to Sheriff 👮",
+        TpToGun = "TP to Dropped Gun 🔫",
+        KillAura = "Kill Aura ⚔️",
+        BringAll = "Bring All Players 🧲",
+        LoopFling = "Loop Fling Players 🌀",
+        AimLockMurder = "Lock Aimbot on Murderer 🎯"
     }
 }
 
@@ -152,7 +176,7 @@ local function CreateTab(tabKey, order)
     TabBtn.Text = LanguageData[CurrentLanguage][tabKey] or tabKey
     TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     TabBtn.Font = Enum.Font.GothamMedium
-    TabBtn.TextSize = 12
+    TabBtn.TextSize = 11
     Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 5)
 
     TextObjects[TabBtn] = function() TabBtn.Text = LanguageData[CurrentLanguage][tabKey] or tabKey end
@@ -169,11 +193,12 @@ end
 
 local Tab1 = CreateTab("Tab1", 1)
 local Tab2 = CreateTab("Tab2", 2)
-local TabFarm = CreateTab("TabFarm", 3)
-local Tab3 = CreateTab("Tab3", 4)
+local TabMurder = CreateTab("TabMurder", 3)
+local TabFarm = CreateTab("TabFarm", 4)
+local Tab3 = CreateTab("Tab3", 5)
 
 ----------------------------------------------------------------
--- [ 3. Rayfield UI Components Builder ]
+-- [ 3. UI Components Builder ]
 ----------------------------------------------------------------
 local function CreateToggle(parent, langKey, default, callback)
     local Frame = Instance.new("Frame", parent)
@@ -274,8 +299,24 @@ local function CreateSlider(parent, langKey, min, max, default, callback)
     end)
 end
 
+local function CreateButton(parent, langKey, callback)
+    local Btn = Instance.new("TextButton", parent)
+    Btn.Size = UDim2.new(1, -10, 0, 36)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Btn.Text = LanguageData[CurrentLanguage][langKey] or langKey
+    Btn.TextColor3 = Color3.fromRGB(210, 210, 210)
+    Btn.Font = Enum.Font.Gotham
+    Btn.TextSize = 12
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 5)
+    local Stroke = Instance.new("UIStroke", Btn)
+    Stroke.Color = Color3.fromRGB(35, 35, 35)
+
+    TextObjects[Btn] = function() Btn.Text = LanguageData[CurrentLanguage][langKey] or langKey end
+    Btn.MouseButton1Click:Connect(callback)
+end
+
 ----------------------------------------------------------------
--- [ 4. หมวดหมู่ที่ 1: Menu Xerox (เพิ่มระบบ Boombox) ]
+-- [ 4. หมวดหมู่ที่ 1: Menu Xerox ]
 ----------------------------------------------------------------
 local SpeedLevel = 1
 local NoclipEnabled = false
@@ -297,7 +338,6 @@ CreateToggle(Tab1, "Invis", false, function(v)
     end
 end)
 
--- 📻 ช่องใส่ Sound ID + ปุ่มเล่นเพลง Boombox
 local SoundIdBox = Instance.new("TextBox", Tab1)
 SoundIdBox.Size = UDim2.new(1, -10, 0, 36)
 SoundIdBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -326,7 +366,6 @@ PlayBoomboxBtn.MouseButton1Click:Connect(function()
     local id = tonumber(SoundIdBox.Text)
     if not id then return end
     
-    -- ค้นหา Boombox ในกระเป๋าตัวละครเพื่อยิง Remote
     local tool = Character:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
     local playedOnServer = false
     
@@ -340,7 +379,6 @@ PlayBoomboxBtn.MouseButton1Click:Connect(function()
         end
     end
     
-    -- หากในตัวไม่มี Boombox ของเกม ให้สร้างเสียง Client-side สำรอง
     if not playedOnServer and Character and Character:FindFirstChild("HumanoidRootPart") then
         local sound = Character.HumanoidRootPart:FindFirstChild("LocalBoomboxSound")
         if not sound then
@@ -350,40 +388,6 @@ PlayBoomboxBtn.MouseButton1Click:Connect(function()
         sound.SoundId = "rbxassetid://" .. tostring(id)
         sound.Volume = 2
         sound:Play()
-    end
-end)
-
-RunService.RenderStepped:Connect(function(dt)
-    if Character and Character:FindFirstChild("Humanoid") then
-        local hum = Character.Humanoid
-        hum.WalkSpeed = 16 + (SpeedLevel - 1) * 12
-        hum.UseJumpPower = true
-        hum.JumpPower = 50 + (JumpLevel - 1) * 20
-        hum.JumpHeight = 7.2 + (JumpLevel - 1) * 5
-    end
-
-    if NoclipEnabled and Character then
-        for _, p in pairs(Character:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = false end
-        end
-    end
-
-    if FlyEnabled and Character and Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = Character.HumanoidRootPart
-        local flySpeed = FlySpeedLevel * 35
-        local moveDir = Vector3.new()
-
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-
-        if moveDir.Magnitude > 0 then
-            hrp.CFrame = hrp.CFrame + (moveDir.Unit * flySpeed * dt)
-        end
-        hrp.Velocity = Vector3.new(0,0,0)
     end
 end)
 
@@ -425,8 +429,6 @@ ColorBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
 ColorBtn.Font = Enum.Font.Gotham
 ColorBtn.TextSize = 12
 Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 5)
-local ColorBtnStroke = Instance.new("UIStroke", ColorBtn)
-ColorBtnStroke.Color = Color3.fromRGB(35, 35, 35)
 
 TextObjects[ColorBtn] = function() ColorBtn.Text = LanguageData[CurrentLanguage]["ESPColor"] end
 ColorBtn.MouseButton1Click:Connect(function()
@@ -439,16 +441,97 @@ CreateToggle(Tab2, "Aimbot", false, function(v)
 end)
 
 ----------------------------------------------------------------
--- [ 6. หมวดหมู่ที่ 3: เมนูฟาร์มทั้งหมด ]
+-- [ 6. 🔪 หมวดหมู่ใหม่: Murder Xerox ]
+----------------------------------------------------------------
+local MurderESPEnabled = false
+local AutoGetGunEnabled = false
+local KillAuraEnabled = false
+local BringAllEnabled = false
+local FlingEnabled = false
+local AimLockMurderEnabled = false
+
+local function GetMurderRole(plr)
+    if not plr or not plr.Character then return "Innocent" end
+    local char = plr.Character
+    local backpack = plr:FindFirstChild("Backpack")
+    
+    local hasKnife = char:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife"))
+    local hasGun = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("Revolver")))
+    
+    if hasKnife then return "Murderer" end
+    if hasGun then return "Sheriff" end
+    return "Innocent"
+end
+
+local function GetDroppedGun()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "GunDrop" or v.Name == "Gun" and v:IsA("BasePart") then
+            return v
+        end
+    end
+    return nil
+end
+
+CreateToggle(TabMurder, "MurderESP", false, function(v) MurderESPEnabled = v end)
+CreateToggle(TabMurder, "AimLockMurder", false, function(v) AimLockMurderEnabled = v end)
+CreateToggle(TabMurder, "AutoGetGun", false, function(v) AutoGetGunEnabled = v end)
+CreateToggle(TabMurder, "KillAura", false, function(v) KillAuraEnabled = v end)
+CreateToggle(TabMurder, "BringAll", false, function(v) BringAllEnabled = v end)
+
+CreateToggle(TabMurder, "LoopFling", false, function(v)
+    FlingEnabled = v
+    if Character and Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = Character.HumanoidRootPart
+        local angVel = hrp:FindFirstChild("FlingSpinVelocity")
+        if v then
+            if not angVel then
+                angVel = Instance.new("BodyAngularVelocity", hrp)
+                angVel.Name = "FlingSpinVelocity"
+                angVel.MaxTorque = Vector3.new(0, math.huge, 0)
+                angVel.AngularVelocity = Vector3.new(0, 99999, 0)
+            end
+        else
+            if angVel then angVel:Destroy() end
+        end
+    end
+end)
+
+CreateButton(TabMurder, "TpToMurder", function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and GetMurderRole(p) == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if Character and Character:FindFirstChild("HumanoidRootPart") then
+                Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+    end
+end)
+
+CreateButton(TabMurder, "TpToSheriff", function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and GetMurderRole(p) == "Sheriff" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if Character and Character:FindFirstChild("HumanoidRootPart") then
+                Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+    end
+end)
+
+CreateButton(TabMurder, "TpToGun", function()
+    local gun = GetDroppedGun()
+    if gun and Character and Character:FindFirstChild("HumanoidRootPart") then
+        Character.HumanoidRootPart.CFrame = gun.CFrame
+    end
+end)
+
+----------------------------------------------------------------
+-- [ 7. หมวดหมู่ที่ 4: เมนูฟาร์มทั้งหมด ]
 ----------------------------------------------------------------
 local DeleteWallsEnabled = false
 local DeleteBrainrotBarrierEnabled = false
 
 local function RemoveTargetWalls()
     for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "WallL" or v.Name == "WallR" then
-            v:Destroy()
-        end
+        if v.Name == "WallL" or v.Name == "WallR" then v:Destroy() end
     end
 end
 
@@ -476,23 +559,14 @@ CreateToggle(TabFarm, "DeleteBrainrotBarrier", false, function(v)
     if v then RemoveBrainrotBarriers() end
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(0.3)
-        if DeleteWallsEnabled then RemoveTargetWalls() end
-        if DeleteBrainrotBarrierEnabled then RemoveBrainrotBarriers() end
-    end
-end)
-
 ----------------------------------------------------------------
--- [ 7. หมวดหมู่ที่ 4: Setting Xerox ]
+-- [ 8. หมวดหมู่ที่ 5: Setting Xerox ]
 ----------------------------------------------------------------
 local AntiKickEnabled = false
 local OldNamecall = nil
 
 local function EnableAntiKick()
     if OldNamecall then return end
-    
     local rawMetatable = getrawmetatable or debug.getmetatable
     local setReadOnly = setreadonly or make_writeable
     
@@ -504,22 +578,13 @@ local function EnableAntiKick()
         gmt.__namecall = newcclosure(function(self, ...)
             local method = getnamecallmethod()
             if AntiKickEnabled and string.lower(method) == "kick" then
-                warn("[Thailand XVP] Blocked a kick/ban attempt!")
+                warn("[Thailand XVP] Blocked a kick attempt!")
                 return nil
             end
             return OldNamecall(self, ...)
         end)
         setReadOnly(gmt, true)
     end
-
-    local oldKick
-    oldKick = hookfunction(LocalPlayer.Kick, newcclosure(function(self, ...)
-        if AntiKickEnabled then
-            warn("[Thailand XVP] Prevented LocalPlayer:Kick()")
-            return nil
-        end
-        return oldKick(self, ...)
-    end))
 end
 
 CreateToggle(Tab3, "AntiKick", false, function(v)
@@ -543,8 +608,6 @@ LangBtn.TextColor3 = Color3.fromRGB(210, 210, 210)
 LangBtn.Font = Enum.Font.Gotham
 LangBtn.TextSize = 12
 Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 5)
-local LangBtnStroke = Instance.new("UIStroke", LangBtn)
-LangBtnStroke.Color = Color3.fromRGB(35, 35, 35)
 
 LangBtn.MouseButton1Click:Connect(function()
     CurrentLanguage = (CurrentLanguage == "TH") and "ENG" or "TH"
@@ -558,120 +621,106 @@ CreateToggle(Tab3, "FullBright", false, function(v)
 end)
 
 ----------------------------------------------------------------
--- [ 8. Auto Parry & Render Loops ]
+-- [ 9. Loops & Render Logic ]
 ----------------------------------------------------------------
-local function ParryBall()
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-    task.wait(0.01)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+RunService.RenderStepped:Connect(function(dt)
+    if Character and Character:FindFirstChild("Humanoid") then
+        local hum = Character.Humanoid
+        hum.WalkSpeed = 16 + (SpeedLevel - 1) * 12
+        hum.UseJumpPower = true
+        hum.JumpPower = 50 + (JumpLevel - 1) * 20
+        hum.JumpHeight = 7.2 + (JumpLevel - 1) * 5
+    end
 
-    pcall(function()
-        local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") or game:GetService("ReplicatedStorage")
-        if remotes:FindFirstChild("ParryButtonPress") then
-            remotes.ParryButtonPress:FireServer()
-        elseif remotes:FindFirstChild("Parry") then
-            remotes.Parry:FireServer()
-        end
-    end)
-end
-
-RunService.PreRender:Connect(function()
-    if not AutoParryEnabled then return end
-    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
-
-    local hrp = Character.HumanoidRootPart
-    local ballsFolder = workspace:FindFirstChild("Balls") or workspace
-
-    for _, obj in pairs(ballsFolder:GetChildren()) do
-        if obj:IsA("BasePart") or obj.Name == "Ball" or obj:getAttribute("realBall") == true then
-            local ball = obj
-            local distance = (ball.Position - hrp.Position).Magnitude
-            local velocity = ball.Velocity.Magnitude
-            local parryDistance = math.clamp(velocity * 0.55, 15, 65)
-
-            local isTargetingMe = false
-            if ball:FindFirstChild("Target") and ball.Target.Value == LocalPlayer.Name then
-                isTargetingMe = true
-            elseif (ball.Position + ball.Velocity - hrp.Position).Magnitude < distance then
-                isTargetingMe = true
-            end
-
-            if isTargetingMe and distance <= parryDistance then
-                ParryBall()
-                break
-            end
+    if NoclipEnabled and Character then
+        for _, p in pairs(Character:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
         end
     end
-end)
 
-RunService.RenderStepped:Connect(function()
-    local nearestPlr = nil
-    local shortestDist = 60
-
+    -- Murder ESP & Standard ESP Logic
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
             local highlight = char:FindFirstChild("ThailandXVP_Highlight")
-            local bbGui = char:FindFirstChild("ThailandXVP_NameTag")
 
-            if ESPEnabled then
+            if MurderESPEnabled or ESPEnabled then
                 if not highlight then
                     highlight = Instance.new("Highlight", char)
                     highlight.Name = "ThailandXVP_Highlight"
                 end
-                highlight.FillColor = ESPColors[CurrentESPColorIdx]
+                
+                local col = ESPColors[CurrentESPColorIdx]
+                if MurderESPEnabled then
+                    local role = GetMurderRole(plr)
+                    if role == "Murderer" then col = Color3.fromRGB(255, 0, 0)
+                    elseif role == "Sheriff" then col = Color3.fromRGB(0, 150, 255)
+                    else col = Color3.fromRGB(0, 255, 120) end
+                end
+
+                highlight.FillColor = col
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.3
-                highlight.OutlineTransparency = 0
                 highlight.Enabled = true
-
-                if not bbGui and char:FindFirstChild("Head") then
-                    bbGui = Instance.new("BillboardGui", char)
-                    bbGui.Name = "ThailandXVP_NameTag"
-                    bbGui.Adornee = char.Head
-                    bbGui.Size = UDim2.new(0, 100, 0, 30)
-                    bbGui.StudsOffset = Vector3.new(0, 2.5, 0)
-                    bbGui.AlwaysOnTop = true
-
-                    local txt = Instance.new("TextLabel", bbGui)
-                    txt.Size = UDim2.new(1, 0, 1, 0)
-                    txt.BackgroundTransparency = 1
-                    txt.Text = plr.DisplayName
-                    txt.Font = Enum.Font.GothamBold
-                    txt.TextSize = 13
-                    txt.TextStrokeTransparency = 0
-                end
-                if bbGui and bbGui:FindFirstChildOfClass("TextLabel") then
-                    bbGui:FindFirstChildOfClass("TextLabel").TextColor3 = ESPColors[CurrentESPColorIdx]
-                    bbGui.Enabled = true
-                end
             else
                 if highlight then highlight.Enabled = false end
-                if bbGui then bbGui.Enabled = false end
             end
+        end
+    end
 
-            if AimbotEnabled and char:FindFirstChild("Head") then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(char.Head.Position)
-                if onScreen then
-                    local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                    local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - centerScreen).Magnitude
-                    
-                    if distFromCenter < shortestDist then
-                        shortestDist = distFromCenter
-                        nearestPlr = plr
-                    end
+    -- Aim Lock on Murderer
+    if AimLockMurderEnabled then
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and GetMurderRole(plr) == "Murderer" and plr.Character and plr.Character:FindFirstChild("Head") then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, plr.Character.Head.Position)
+                break
+            end
+        end
+    end
+
+    -- Kill Aura
+    if KillAuraEnabled and Character and Character:FindFirstChild("Knife") then
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (plr.Character.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
+                if dist <= 18 then
+                    local knife = Character:FindFirstChild("Knife")
+                    knife:Activate()
                 end
             end
         end
     end
 
-    if AimbotEnabled and nearestPlr and nearestPlr.Character and nearestPlr.Character:FindFirstChild("Head") then
-        Camera.CFrame = CFrame.new(Camera.CFrame.Position, nearestPlr.Character.Head.Position)
+    -- Bring All Players
+    if BringAllEnabled and Character and Character:FindFirstChild("HumanoidRootPart") then
+        local myHrp = Character.HumanoidRootPart
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                pcall(function()
+                    plr.Character.HumanoidRootPart.CFrame = myHrp.CFrame * CFrame.new(0, 0, -2.5)
+                end)
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        if DeleteWallsEnabled then RemoveTargetWalls() end
+        if DeleteBrainrotBarrierEnabled then RemoveBrainrotBarriers() end
+        
+        if AutoGetGunEnabled then
+            local gun = GetDroppedGun()
+            if gun and Character and Character:FindFirstChild("HumanoidRootPart") then
+                Character.HumanoidRootPart.CFrame = gun.CFrame
+            end
+        end
     end
 end)
 
 ----------------------------------------------------------------
--- [ 9. ปุ่มวงกลมย่อเปิด/ปิด Rayfield Style Floating Button ]
+-- [ 10. Floating Button & Toggle GUI ]
 ----------------------------------------------------------------
 local ToggleBtn = Instance.new("ImageButton", ScreenGui)
 ToggleBtn.Name = "RayfieldFloatingButton"
@@ -683,7 +732,6 @@ ToggleBtn.Active = true
 ToggleBtn.Draggable = true
 
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
-
 local CircleStroke = Instance.new("UIStroke", ToggleBtn)
 CircleStroke.Color = Color3.fromRGB(255, 85, 0)
 CircleStroke.Thickness = 2
