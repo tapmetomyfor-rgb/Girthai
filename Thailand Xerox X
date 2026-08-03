@@ -1,4 +1,4 @@
--- โหลด Rayfield UI Library (เสถียร รันง่ายที่สุด)
+-- โหลด Rayfield UI Library
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- บริการหลัก Roblox
@@ -13,12 +13,14 @@ local LocalPlayer = Players.LocalPlayer
 ----------------------------------------------------------------
 local function PlaySound(soundId, volume)
     task.spawn(function()
-        local sound = Instance.new("Sound")
-        sound.SoundId = soundId or "rbxassetid://6895079853"
-        sound.Volume = volume or 1
-        sound.Parent = SoundService
-        sound:Play()
-        sound.Ended:Connect(function() sound:Destroy() end)
+        pcall(function()
+            local sound = Instance.new("Sound")
+            sound.SoundId = soundId or "rbxassetid://6895079853"
+            sound.Volume = volume or 1
+            sound.Parent = SoundService
+            sound:Play()
+            sound.Ended:Connect(function() sound:Destroy() end)
+        end)
     end)
 end
 
@@ -50,24 +52,23 @@ local PotatoEnabled = false
 local OriginalMaterials = {}
 
 ----------------------------------------------------------------
--- [ 🎨 สร้าง Window หลักในธีม x2zu (Dark & Red Stellar) ]
+-- [ 🎨 สร้าง Window หลักในธีม x2zu Style ]
 ----------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
    Name = "x2zu [ Stellar ] | Thailand XVP",
-   LoadingTitle = "x2zu on top...",
+   LoadingTitle = "x2zu Loading...",
    LoadingSubtitle = "by XVP Team",
    ConfigurationSaving = { Enabled = false },
    Discord = { Enabled = false },
    KeySystem = false,
-   -- ปรับธีมแต่งสีให้ใกล้เคียง x2zu Dark Theme
    Theme = "Default"
 })
 
 ----------------------------------------------------------------
--- [ 🔘 ปุ่มย่อ/ขยาย UI แบบมีภาพ (Floating Toggle Button) ]
+-- [ 🔘 ปุ่มย่อ/ขยาย UI แบบตรง (Floating Toggle Button Fix) ]
 ----------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "x2zu_RayfieldToggleGui"
+ScreenGui.Name = "x2zu_ToggleGui_Fix"
 pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
@@ -82,14 +83,20 @@ FloatingBtn.Draggable = true
 
 Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(1, 0)
 local BtnStroke = Instance.new("UIStroke", FloatingBtn)
-BtnStroke.Color = Color3.fromRGB(255, 45, 45) -- สีแดง Accent แบบ x2zu
+BtnStroke.Color = Color3.fromRGB(255, 45, 45) -- สีแดงสไตล์ x2zu
 BtnStroke.Thickness = 2
 
+-- ระบบสั่ง ซ่อน/โชว์ UI โดยตรง
+local uiVisible = true
 FloatingBtn.MouseButton1Click:Connect(function()
     PlayClickSound()
-    -- สลับเปิด/ปิด Rayfield UI ผ่าน Virtual Input
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.K, false, game)
-    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.K, false, game)
+    uiVisible = not uiVisible
+    pcall(function()
+        local rayfieldGui = game:GetService("CoreGui"):FindFirstChild("Rayfield") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Rayfield")
+        if rayfieldGui then
+            rayfieldGui.Enabled = uiVisible
+        end
+    end)
 end)
 
 ----------------------------------------------------------------
@@ -235,11 +242,12 @@ local playerNames = {}
 for _, p in pairs(Players:GetPlayers()) do
     if p ~= LocalPlayer then table.insert(playerNames, p.Name) end
 end
+if #playerNames == 0 then table.insert(playerNames, "ไม่มีผู้เล่นอื่น") end
 
 TabPull:CreateDropdown({
    Name = "เลือกเป้าหมายคนในแมพ",
    Options = playerNames,
-   CurrentOption = "",
+   CurrentOption = playerNames[1],
    Callback = function(Option)
       PlayClickSound()
       if type(Option) == "table" then Option = Option[1] end
@@ -363,18 +371,20 @@ TabSettings:CreateToggle({
       PlayClickSound()
       AntiKickEnabled = v
       if v then
-          local rawMetatable = getrawmetatable or debug.getmetatable
-          local setReadOnly = setreadonly or make_writeable
-          if rawMetatable and setReadOnly then
-              local gmt = rawMetatable(game)
-              local oldNamecall = gmt.__namecall
-              setReadOnly(gmt, false)
-              gmt.__namecall = newcclosure(function(self, ...)
-                  if AntiKickEnabled and string.lower(getnamecallmethod()) == "kick" then return nil end
-                  return oldNamecall(self, ...)
-              end)
-              setReadOnly(gmt, true)
-          end
+          pcall(function()
+              local rawMetatable = getrawmetatable or debug.getmetatable
+              local setReadOnly = setreadonly or make_writeable
+              if rawMetatable and setReadOnly then
+                  local gmt = rawMetatable(game)
+                  local oldNamecall = gmt.__namecall
+                  setReadOnly(gmt, false)
+                  gmt.__namecall = newcclosure(function(self, ...)
+                      if AntiKickEnabled and string.lower(getnamecallmethod()) == "kick" then return nil end
+                      return oldNamecall(self, ...)
+                  end)
+                  setReadOnly(gmt, true)
+              end
+          end)
       end
    end,
 })
