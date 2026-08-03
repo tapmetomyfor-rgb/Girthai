@@ -1,45 +1,64 @@
+-- โหลด UI Library (x2zu Framework)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/x2zu/OPEN-SOURCE-UI-ROBLOX/refs/heads/main/X2ZU%20UI%20ROBLOX%20OPEN%20SOURCE/DummyUi-leak-by-x2zu/fetching-main/Tools/Framework.luau"))()
 
--- โหลด MacLib
-local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
-
--- ตั้งค่า Window
-local Window = MacLib:Window({
-    Title = "Thailand XVP V13 | MacLib",
-    Subtitle = "Ultra Physics Fling & Control",
-    Size = UDim2.fromOffset(550, 450),
-    Theme = MacLib.Themes.Dark,
-    Extension = "XVP"
-})
-
--- ตัวแปรระบบ
+-- บริการหลักของ Roblox
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
+
+-- ตัวแปรสถานะระบบต่างๆ
+local WalkSpeedValue = 16
+local JumpPowerValue = 50
+local NoclipEnabled = false
+local InvisibleEnabled = false
+
+local KillAuraPull = false
+local AutoFlingLoop = false
 local SelectedTarget = nil
 
+local MurderESPEnabled = false
+local AimLockMurderEnabled = false
+local CurveBulletEnabled = false
+
+local AntiKickEnabled = false
+local FullBrightEnabled = false
+local PotatoEnabled = false
+local OriginalMaterials = {}
+
+-- สร้าง Window หลัก
+local Window = Library:Window({
+    Title = "Thailand XVP | x2zu Complete Edition",
+    Desc = "รวมทุกฟีเจอร์ (Movement, Pull, Murder, Settings)",
+    Icon = 105059922903197,
+    Theme = "Dark",
+    Config = {
+        Keybind = Enum.KeyCode.RightControl,
+        Size = UDim2.new(0, 520, 0, 440)
+    },
+    CloseUIButton = {
+        Enabled = true,
+        Text = "XVP"
+    }
+})
+
 ----------------------------------------------------------------
--- [ 🚀 ฟังก์ชัน Fling ดีดคนออกนอกแมพ (Fixed Engine) ]
+-- [ Engine: ระบบดีดคน (Push Fling) ]
 ----------------------------------------------------------------
 local isFlinging = false
 
 local function FlingTarget(targetPlayer)
-    if isFlinging then return end
-    if not targetPlayer or not targetPlayer.Character then return end
+    if isFlinging or not targetPlayer or not targetPlayer.Character then return end
     
     local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
     local myChar = LocalPlayer.Character
     local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
     
-    if not targetHRP or not myHRP or not myHum then return end
+    if not targetHRP or not myHRP then return end
     
     isFlinging = true
-    
-    -- เซ็ตค่ากล้องไม่ให้มึนหัวขณะ Fling
     local oldCFrame = myHRP.CFrame
     
-    -- สร้างแรงเหวี่ยงฟิสิกส์ระดับสูง
     local bV = Instance.new("BodyVelocity")
     bV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bV.Velocity = Vector3.new(999999, 999999, 999999)
@@ -50,17 +69,15 @@ local function FlingTarget(targetPlayer)
     bAV.AngularVelocity = Vector3.new(999999, 999999, 999999)
     bAV.Parent = myHRP
 
-    -- ลูปเข้าชนเป้าหมายสลับจังหวะ (Push Loop)
     local startTime = tick()
     local flingConnection
     
     flingConnection = RunService.Heartbeat:Connect(function()
         if not isFlinging or (tick() - startTime > 1.5) or not targetPlayer.Character or not targetHRP.Parent then
             flingConnection:Disconnect()
-            bV:Destroy()
-            bAV:Destroy()
+            if bV then bV:Destroy() end
+            if bAV then bAV:Destroy() end
             
-            -- ดึงตัวเรากลับมาตำแหน่งเดิม
             myHRP.Velocity = Vector3.new(0, 0, 0)
             myHRP.RotVelocity = Vector3.new(0, 0, 0)
             myHRP.CFrame = oldCFrame
@@ -68,140 +85,453 @@ local function FlingTarget(targetPlayer)
             return
         end
         
-        -- ปรับฟิสิกส์ชนแรงสูง
         myHRP.Velocity = Vector3.new(0, 9999, 0)
         myHRP.RotVelocity = Vector3.new(99999, 99999, 99999)
-        
-        -- วาร์ปไปอัดตำแหน่งเป้าหมายตรงๆ
         myHRP.CFrame = targetHRP.CFrame * CFrame.new(math.random(-1,1), math.random(-1,1), math.random(-1,1))
     end)
 end
 
 ----------------------------------------------------------------
--- [ Tab 1: Pull & Fling Systems ]
+-- [ Engine: ระบบหาฆาตกรและตำรวจ ]
 ----------------------------------------------------------------
-local TabPull = Window:Tab("Pull & Fling 🧲")
-
--- Section 1: Fling & Push
-local SecFling = TabPull:Section("Super Fling (ดีดคนออกแมพ)")
-
-SecFling:Button({
-    Name = "🚀 ดีดเป้าหมายออกนอกแมพ (Fling Selected)",
-    Callback = function()
-        if SelectedTarget then
-            FlingTarget(SelectedTarget)
+local function GetMurdererPlayer()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local char = plr.Character
+            local backpack = plr:FindFirstChild("Backpack")
+            local hasKnife = char:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife"))
+            if hasKnife then return plr end
         end
     end
-})
-
-local AutoFlingLoop = false
-SecFling:Toggle({
-    Name = "🔄 ลูปดีดเป้าหมายเรื่อยๆ (Loop Fling)",
-    Default = false,
-    Callback = function(v)
-        AutoFlingLoop = v
-    end
-})
-
--- Section 2: Target Selector
-local SecTarget = TabPull:Section("เลือกเป้าหมาย")
-
-local TargetNames = {}
-local TargetDropdown = SecTarget:Dropdown({
-    Name = "เลือกชื่อผู้เล่น:",
-    Items = TargetNames,
-    Callback = function(v)
-        SelectedTarget = Players:FindFirstChild(v)
-    end
-})
-
-local function RefreshList()
-    TargetNames = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            table.insert(TargetNames, p.Name)
-        end
-    end
-    TargetDropdown:Set(TargetNames)
+    return nil
 end
 
-SecTarget:Button({
-    Name = "🔄 อัปเดตรายชื่อคนในแมพ",
-    Callback = function()
-        RefreshList()
-    end
-})
-
--- Section 3: Kill Aura Pull
-local KillAuraPull = false
-local SecAura = TabPull:Section("Kill Aura System")
-
-SecAura:Toggle({
-    Name = "🧲 ดึงทุกคนในแมพมาลอยตรงหน้า (Kill Aura Pull)",
-    Default = false,
-    Callback = function(v)
-        KillAuraPull = v
-    end
-})
-
-----------------------------------------------------------------
--- [ Tab 2: Movement & Main ]
-----------------------------------------------------------------
-local TabMain = Window:Tab("Main Movement")
-local SecMove = TabMain:Section("Movement Tools")
-
-SecMove:Slider({
-    Name = "ความเร็วการเดิน (WalkSpeed)",
-    Default = 16,
-    Min = 16,
-    Max = 120,
-    Callback = function(v)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v
+local function GetSheriffPlayer()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local char = plr.Character
+            local backpack = plr:FindFirstChild("Backpack")
+            local hasGun = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("Revolver")))
+            if hasGun then return plr end
         end
     end
-})
+    return nil
+end
 
-local NoclipEnabled = false
-SecMove:Toggle({
-    Name = "เดินทะลุกำแพง (Noclip)",
-    Default = false,
-    Callback = function(v)
-        NoclipEnabled = v
-    end
-})
+local function GetMurderRole(plr)
+    if not plr or not plr.Character then return "Innocent" end
+    local char = plr.Character
+    local backpack = plr:FindFirstChild("Backpack")
+    
+    local hasKnife = char:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife"))
+    local hasGun = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("Revolver")))
+    
+    if hasKnife then return "Murderer" end
+    if hasGun then return "Sheriff" end
+    return "Innocent"
+end
 
 ----------------------------------------------------------------
--- [ Core Loop Engine ]
+-- [ TAB 1: Main Movement ]
+----------------------------------------------------------------
+local TabMain = Window:Tab({Title = "Main Xerox", Icon = "rbxassetid://6035198888"}) do
+    TabMain:Section({Title = "การเคลื่อนที่ & สถานะตัวละคร"})
+
+    TabMain:Slider({
+        Title = "วิ่งเร็ว (WalkSpeed)",
+        Min = 16,
+        Max = 150,
+        Rounding = 0,
+        Value = 16,
+        Callback = function(val)
+            WalkSpeedValue = val
+        end
+    })
+
+    TabMain:Slider({
+        Title = "กระโดดสูง (JumpPower)",
+        Min = 50,
+        Max = 250,
+        Rounding = 0,
+        Value = 50,
+        Callback = function(val)
+            JumpPowerValue = val
+        end
+    })
+
+    TabMain:Toggle({
+        Title = "ทะลุกำแพง (Noclip)",
+        Desc = "เดินทะลุสิ่งกีดขวางได้ทุกชนิด",
+        Value = false,
+        Callback = function(v)
+            NoclipEnabled = v
+        end
+    })
+
+    TabMain:Toggle({
+        Title = "หายตัว (Invisible)",
+        Desc = "ปรับความโปร่งแสงตัวละคร",
+        Value = false,
+        Callback = function(v)
+            InvisibleEnabled = v
+            local myChar = LocalPlayer.Character
+            if myChar then
+                for _, p in pairs(myChar:GetDescendants()) do
+                    if p:IsA("BasePart") or p:IsA("Decal") then 
+                        p.Transparency = v and 1 or 0 
+                    end
+                end
+            end
+        end
+    })
+end
+
+Window:Line()
+
+----------------------------------------------------------------
+-- [ TAB 2: Pull & Fling Systems ]
+----------------------------------------------------------------
+local TabPull = Window:Tab({Title = "Pull & Control 🧲", Icon = "rbxassetid://4483362456"}) do
+    TabPull:Section({Title = "ระบบเลือกเป้าหมาย"})
+
+    local playerNames = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(playerNames, p.Name) end
+    end
+
+    TabPull:Dropdown({
+        Title = "เลือกผู้เล่นในแมพ",
+        List = playerNames,
+        Value = "",
+        Callback = function(choice)
+            SelectedTarget = Players:FindFirstChild(choice)
+            Window:Notify({Title = "Target Selected", Desc = "เลือก: " .. choice, Time = 2})
+        end
+    })
+
+    TabPull:Textbox({
+        Title = "พิมพ์ค้นหาชื่อผู้เล่น",
+        Desc = "พิมพ์แค่ตัวอักษรหน้าของชื่อได้",
+        Placeholder = "Enter player name...",
+        Value = "",
+        ClearTextOnFocus = false,
+        Callback = function(text)
+            if text == "" then return end
+            for _, p in pairs(Players:GetPlayers()) do
+                if string.lower(string.sub(p.Name, 1, #text)) == string.lower(text) then
+                    SelectedTarget = p
+                    Window:Notify({Title = "Target Found", Desc = "เป้าหมาย: " .. p.Name, Time = 2})
+                    break
+                end
+            end
+        end
+    })
+
+    TabPull:Section({Title = "คำสั่งการดึง & ดีด"})
+
+    TabPull:Button({
+        Title = "🧲 ดึงผู้เล่นที่เลือกมาตรงหน้า",
+        Desc = "วาร์ปเป้าหมายมาต่อหน้าชั่วคราว",
+        Callback = function()
+            if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
+                local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if myHRP then
+                    SelectedTarget.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3)
+                end
+            else
+                Window:Notify({Title = "Error", Desc = "กรุณาเลือกเป้าหมายก่อน!", Time = 3})
+            end
+        end
+    })
+
+    TabPull:Button({
+        Title = "🚀 ดีดผู้เล่นออกนอกแมพ (Fling)",
+        Desc = "วาร์ปไปกระแทกเป้าหมายให้กระเด็นตกแมพ",
+        Callback = function()
+            if SelectedTarget then
+                FlingTarget(SelectedTarget)
+            else
+                Window:Notify({Title = "Error", Desc = "กรุณาเลือกเป้าหมายก่อน!", Time = 3})
+            end
+        end
+    })
+
+    TabPull:Toggle({
+        Title = "🔄 ลูปดีดเป้าหมายอัตโนมัติ (Loop Fling)",
+        Desc = "ถ้าเป้าหมายเกิดใหม่จะตามไปดีดเรื่อยๆ",
+        Value = false,
+        Callback = function(v)
+            AutoFlingLoop = v
+        end
+    })
+
+    TabPull:Toggle({
+        Title = "⚔️ ดึงทุกคนในแมพมาฆ่า (Kill Aura Pull)",
+        Desc = "ลากผู้เล่นทุกคนมาลอยตรงหน้าเราตลอดเวลา",
+        Value = false,
+        Callback = function(v)
+            KillAuraPull = v
+        end
+    })
+end
+
+Window:Line()
+
+----------------------------------------------------------------
+-- [ TAB 3: Murder Mystery Xerox ]
+----------------------------------------------------------------
+local TabMurder = Window:Tab({Title = "Murder Xerox 🔪", Icon = "rbxassetid://105059922903197"}) do
+    TabMurder:Section({Title = "การวาร์ปและไอเทม"})
+
+    TabMurder:Button({
+        Title = "🔫 ดึงปืนที่ตกมาหาตัว (Bring Gun)",
+        Desc = "ย้ายตำแหน่งปืนที่ตกอยู่มาไว้ที่เท้า",
+        Callback = function()
+            local gunDrop = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun") or workspace:FindFirstChild("GunServer", true)
+            if not gunDrop then
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if (obj.Name == "GunDrop" or obj.Name == "Gun") and (obj:IsA("BasePart") or obj:IsA("Model")) then
+                        gunDrop = obj
+                        break
+                    end
+                end
+            end
+
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if gunDrop and myHRP then
+                local targetPos = myHRP.CFrame * CFrame.new(0, -2, 0)
+                if gunDrop:IsA("Model") then 
+                    gunDrop:SetPrimaryPartCFrame(targetPos)
+                elseif gunDrop:IsA("BasePart") then 
+                    gunDrop.CFrame = targetPos 
+                end
+                Window:Notify({Title = "Success", Desc = "ดึงปืนเรียบร้อยแล้ว!", Time = 2})
+            else
+                Window:Notify({Title = "Error", Desc = "ไม่พบปืนที่ตกอยู่ในแมพ!", Time = 3})
+            end
+        end
+    })
+
+    TabMurder:Button({
+        Title = "🔪 วาร์ปไปหาฆาตกร (TP Murderer)",
+        Callback = function()
+            local m = GetMurdererPlayer()
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") and myHRP then
+                myHRP.CFrame = m.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            else
+                Window:Notify({Title = "Error", Desc = "ยังไม่พบตัวฆาตกร!", Time = 3})
+            end
+        end
+    })
+
+    TabMurder:Button({
+        Title = "👮 วาร์ปไปหาตำรวจ (TP Sheriff)",
+        Callback = function()
+            local s = GetSheriffPlayer()
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if s and s.Character and s.Character:FindFirstChild("HumanoidRootPart") and myHRP then
+                myHRP.CFrame = s.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            else
+                Window:Notify({Title = "Error", Desc = "ยังไม่พบตัวตำรวจ!", Time = 3})
+            end
+        end
+    })
+
+    TabMurder:Section({Title = "ระบบช่วยเหลือการยิง & มอง"})
+
+    TabMurder:Toggle({
+        Title = "🎯 ESP แยกบทบาท (ฆาตกร/ตำรวจ)",
+        Desc = "ฆาตกร = สีแดง, ตำรวจ = สีฟ้า, คนธรรมดา = สีเขียว",
+        Value = false,
+        Callback = function(v)
+            MurderESPEnabled = v
+        end
+    })
+
+    TabMurder:Toggle({
+        Title = "🌀 ยิงกระสุนโค้ง (Curve Bullet)",
+        Desc = "กระสุนจะเลี้ยวเข้าเป้าหมายให้อัตโนมัติ",
+        Value = false,
+        Callback = function(v)
+            CurveBulletEnabled = v
+        end
+    })
+
+    TabMurder:Toggle({
+        Title = "🔪 ล็อคเป้าฆาตกร (AimLock)",
+        Desc = "หันกล้องไปทางฆาตกรตลอดเวลา",
+        Value = false,
+        Callback = function(v)
+            AimLockMurderEnabled = v
+        end
+    })
+end
+
+Window:Line()
+
+----------------------------------------------------------------
+-- [ TAB 4: Settings & Misc ]
+----------------------------------------------------------------
+local TabSettings = Window:Tab({Title = "Setting Xerox ⚙️", Icon = "rbxassetid://6031280882"}) do
+    TabSettings:Section({Title = "การป้องกัน & กราฟิก"})
+
+    TabSettings:Toggle({
+        Title = "🛡️ กันโดนเตะ / กันแบน (Anti-Kick)",
+        Value = false,
+        Callback = function(v)
+            AntiKickEnabled = v
+            if v then
+                local rawMetatable = getrawmetatable or debug.getmetatable
+                local setReadOnly = setreadonly or make_writeable
+                if rawMetatable and setReadOnly then
+                    local gmt = rawMetatable(game)
+                    local oldNamecall = gmt.__namecall
+                    setReadOnly(gmt, false)
+
+                    gmt.__namecall = newcclosure(function(self, ...)
+                        local method = getnamecallmethod()
+                        if AntiKickEnabled and string.lower(method) == "kick" then
+                            return nil
+                        end
+                        return oldNamecall(self, ...)
+                    end)
+                    setReadOnly(gmt, true)
+                end
+            end
+        end
+    })
+
+    TabSettings:Toggle({
+        Title = "🥔 ภาพดินน้ำมัน (Potato Graphics)",
+        Desc = "ช่วยลดอาการแลค ปรับทุกอย่างเป็น SmoothPlastic",
+        Value = false,
+        Callback = function(v)
+            PotatoEnabled = v
+            if v then
+                for _, p in pairs(workspace:GetDescendants()) do
+                    if p:IsA("BasePart") then
+                        if not OriginalMaterials[p] then OriginalMaterials[p] = p.Material end
+                        p.Material = Enum.Material.SmoothPlastic
+                    end
+                end
+            else
+                for part, mat in pairs(OriginalMaterials) do
+                    if part and part.Parent then part.Material = mat end
+                end
+                OriginalMaterials = {}
+            end
+        end
+    })
+
+    TabSettings:Toggle({
+        Title = "💡 เพิ่มแสงสว่าง (FullBright)",
+        Desc = "มองเห็นในที่มืดได้ชัดเจน",
+        Value = false,
+        Callback = function(v)
+            FullBrightEnabled = v
+            Lighting.Brightness = v and 2 or 1
+            Lighting.GlobalShadows = not v
+        end
+    })
+
+    TabSettings:Button({
+        Title = "🧱 ลบกำแพงแมพออก (Delete Walls)",
+        Callback = function()
+            for _, p in pairs(workspace:GetDescendants()) do
+                if p.Name == "WallL" or p.Name == "WallR" then p:Destroy() end
+            end
+            Window:Notify({Title = "Success", Desc = "ลบกำแพงแมพออกเรียบร้อย!", Time = 2})
+        end
+    })
+end
+
+----------------------------------------------------------------
+-- [ Core Loop System ]
 ----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
     local myChar = LocalPlayer.Character
     if not myChar then return end
     local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    local myHum = myChar:FindFirstChildOfClass("Humanoid")
     
-    -- Noclip
+    -- ปรับค่า WalkSpeed & JumpPower
+    if myHum then
+        if WalkSpeedValue > 16 then myHum.WalkSpeed = WalkSpeedValue end
+        myHum.UseJumpPower = true
+        if JumpPowerValue > 50 then myHum.JumpPower = JumpPowerValue end
+    end
+    
+    -- Noclip Logic
     if NoclipEnabled then
         for _, part in pairs(myChar:GetDescendants()) do
-            if part:IsA("BasePart") then
+            if part:IsA("BasePart") and part.CanCollide then
                 part.CanCollide = false
             end
         end
     end
-    
-    -- Pull All (Kill Aura)
+
+    -- Kill Aura Pull All
     if KillAuraPull and myHRP then
+        local tool = myChar:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
+        if tool and tool.Parent == LocalPlayer.Backpack then
+            myHum:EquipTool(tool)
+        end
+
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 p.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3.5)
             end
         end
+
+        if tool then tool:Activate() end
     end
-    
-    -- Auto Loop Fling Target
+
+    -- Auto Loop Fling
     if AutoFlingLoop and SelectedTarget and not isFlinging then
         FlingTarget(SelectedTarget)
     end
+
+    -- AimLock Murderer
+    if AimLockMurderEnabled then
+        local m = GetMurdererPlayer()
+        if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") then
+            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, m.Character.HumanoidRootPart.Position)
+        end
+    end
+
+    -- ESP System Engine
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local char = plr.Character
+            local highlight = char:FindFirstChild("XVP_Highlight")
+
+            if MurderESPEnabled then
+                if not highlight then
+                    highlight = Instance.new("Highlight", char)
+                    highlight.Name = "XVP_Highlight"
+                end
+                
+                local role = GetMurderRole(plr)
+                if role == "Murderer" then 
+                    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                elseif role == "Sheriff" then 
+                    highlight.FillColor = Color3.fromRGB(0, 150, 255)
+                else 
+                    highlight.FillColor = Color3.fromRGB(0, 255, 120) 
+                end
+
+                highlight.Enabled = true
+            else
+                if highlight then highlight.Enabled = false end
+            end
+        end
+    end
 end)
 
--- Initial Target Refresh
-RefreshList()
+-- แจ้งเตือนเมื่อโหลดสำเร็จ
+Window:Notify({
+    Title = "Thailand XVP V15",
+    Desc = "ย้ายฟังก์ชันทั้งหมดมาใส่ x2zu UI เรียบร้อยแล้ว!",
+    Time = 4
+})
