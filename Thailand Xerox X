@@ -6,7 +6,9 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local SoundService = game:GetService("SoundService")
+local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
 ----------------------------------------------------------------
 -- [ 🔊 ระบบเสียง (Sound System) ]
@@ -32,11 +34,19 @@ local function PlayFlingSound()
     PlaySound("rbxassetid://132948338000932", 1.2)
 end
 
--- ตัวแปรสถานะระบบ
+----------------------------------------------------------------
+-- [ 🌐 ตัวแปรสถานะและภาษา (Language & State Variables) ]
+----------------------------------------------------------------
+local CurrentLang = "TH" -- "TH" หรือ "EN"
+
 local WalkSpeedValue = 16
 local JumpPowerValue = 50
 local NoclipEnabled = false
 local InvisibleEnabled = false
+
+local UniversalAimbotEnabled = false
+local AimMurdererEnabled = false
+local AimSheriffEnabled = false
 
 local KillAuraPull = false
 local AutoFlingLoop = false
@@ -44,13 +54,123 @@ local SelectedTarget = nil
 
 local MurderESPEnabled = false
 local GunESPEnabled = false
-local AimLockMurderEnabled = false
 local CurveBulletEnabled = false
+
+-- ตัวแปรแมตช์เบสบอล (Baseball Xerox)
+local AutoHitEnabled = false
+local AutoSkillEnabled = false
+local HitDistanceThreshold = 15 -- ระยะที่ลูกบอลเข้ามาใกล้พอจะตี (ปรับได้)
 
 local AntiKickEnabled = false
 local FullBrightEnabled = false
 local PotatoEnabled = false
 local OriginalMaterials = {}
+
+----------------------------------------------------------------
+-- [ 🌐 ตารางภาษา (Localization Dictionary) ]
+----------------------------------------------------------------
+local L = {
+    TH = {
+        MainTab = "Main Xerox 🏃",
+        SecMovement = "การเคลื่อนที่ & ตัวละคร",
+        WalkSpeed = "วิ่งเร็ว (WalkSpeed)",
+        JumpPower = "กระโดดสูง (JumpPower)",
+        Noclip = "เดินทะลุกำแพง (Noclip)",
+        Invisible = "หายตัว (Invisible)",
+        SecUniversalAim = "ระบบล็อคเป้าทั่วไป (ทุกแมพ)",
+        UniversalAimbot = "🎯 Aimbot ล็อคคนใกล้สุด",
+        
+        BaseballTab = "Baseball Xerox ⚾",
+        SecBaseball = "ระบบช่วยเล่นเบสบอล",
+        AutoHit = "⚾ ปัด/ตีบอลอัตโนมัติแม่นยำ (Auto Hit)",
+        AutoSkill = "⚡ ใช้สกิลอัตโนมัติ (Auto Skill)",
+        
+        PullTab = "Pull & Control 🧲",
+        SecSelect = "เลือกเป้าหมาย",
+        SelectTarget = "เลือกเป้าหมายคนในแมพ",
+        NoPlayer = "ไม่มีผู้เล่นอื่น",
+        SecControl = "คำสั่งการดึง & ดีดคน",
+        PullTarget = "🧲 ดึงเป้าหมายมาตรงหน้า",
+        FlingTarget = "🚀 ดีดเป้าหมายออกนอกแมพ",
+        LoopFling = "🔄 ลูปดีดเป้าหมายเรื่อยๆ",
+        KillAura = "⚔️ ดึงทุกคนในแมพมาฆ่า",
+        
+        MurderTab = "Murder Xerox 🔪",
+        SecGun = "จัดการปืน (Gun Controls)",
+        BringGun = "🔫 ดึงปืนที่ตกมาหาตัว",
+        TPGun = "⚡ วาร์ปไปหาปืนที่ตก",
+        GunESP = "🌟 ESP มองเห็นปืนที่ตก (สีทอง)",
+        SecMurderControl = "จัดการผู้เล่น & Aimbot เฉพาะบทบาท",
+        AimMurder = "🔪 Aimbot ล็อคเป้าฆาตกร",
+        AimSheriff = "👮 Aimbot ล็อคเป้านายอำเภอ",
+        FlingMurder = "🚀 ดีดฆาตกรออกนอกแมพ",
+        FlingSheriff = "🚀 ดีดตำรวจออกนอกแมพ",
+        TPMurder = "🔪 วาร์ปไปหาฆาตกร",
+        TPSheriff = "👮 วาร์ปไปหาตำรวจ",
+        SecMurderMisc = "ระบบช่วยเล่นอื่นๆ",
+        RoleESP = "🎯 ESP แยกบทบาทผู้เล่น",
+        CurveBullet = "🌀 ยิงกระสุนโค้ง",
+        
+        SettingTab = "Setting Xerox ⚙️",
+        SecLang = "ภาษา (Language Settings)",
+        SelectLang = "เปลี่ยนภาษา / Change Language",
+        SecGraphics = "การป้องกัน & กราฟิก",
+        AntiKick = "🛡️ กันโดนเตะ (Anti-Kick)",
+        Potato = "🥔 ภาพดินน้ำมัน (Potato Graphics)",
+        FullBright = "💡 เพิ่มแสงสว่าง (FullBright)",
+        DeleteWalls = "🧱 ลบกำแพงแมพออก (Delete Walls)"
+    },
+    EN = {
+        MainTab = "Main Xerox 🏃",
+        SecMovement = "Movement & Character",
+        WalkSpeed = "WalkSpeed",
+        JumpPower = "JumpPower",
+        Noclip = "Noclip",
+        Invisible = "Invisible",
+        SecUniversalAim = "Universal Aimbot (All Games)",
+        UniversalAimbot = "🎯 Aimbot Closest Player",
+        
+        BaseballTab = "Baseball Xerox ⚾",
+        SecBaseball = "Baseball Automation",
+        AutoHit = "⚾ Auto Hit (Precise Ball Batting)",
+        AutoSkill = "⚡ Auto Skill Usage",
+        
+        PullTab = "Pull & Control 🧲",
+        SecSelect = "Target Selection",
+        SelectTarget = "Select Player in Map",
+        NoPlayer = "No other players",
+        SecControl = "Pull & Fling Commands",
+        PullTarget = "🧲 Pull Target to Front",
+        FlingTarget = "🚀 Fling Target Out of Map",
+        LoopFling = "🔄 Loop Fling Target",
+        KillAura = "⚔️ Kill Aura Pull (All Players)",
+        
+        MurderTab = "Murder Xerox 🔪",
+        SecGun = "Gun Controls",
+        BringGun = "🔫 Bring Dropped Gun",
+        TPGun = "⚡ TP to Dropped Gun",
+        GunESP = "🌟 Dropped Gun ESP (Gold)",
+        SecMurderControl = "Player & Role Aimbot Controls",
+        AimMurder = "🔪 AimLock Murderer",
+        AimSheriff = "👮 AimLock Sheriff",
+        FlingMurder = "🚀 Fling Murderer",
+        FlingSheriff = "🚀 Fling Sheriff",
+        TPMurder = "🔪 TP to Murderer",
+        TPSheriff = "👮 TP to Sheriff",
+        SecMurderMisc = "Other Helpers",
+        RoleESP = "🎯 Role ESP (Murder/Sheriff)",
+        CurveBullet = "🌀 Curve Bullet",
+        
+        SettingTab = "Setting Xerox ⚙️",
+        SecLang = "Language Settings",
+        SelectLang = "Change Language / เปลี่ยนภาษา",
+        SecGraphics = "Protection & Graphics",
+        AntiKick = "🛡️ Anti-Kick",
+        Potato = "🥔 Potato Graphics",
+        FullBright = "💡 FullBright",
+        DeleteWalls = "🧱 Delete Walls"
+    }
+}
 
 ----------------------------------------------------------------
 -- [ 🎨 สร้าง Window หลัก ]
@@ -116,8 +236,69 @@ local function FlingTarget(targetPlayer)
 end
 
 ----------------------------------------------------------------
--- [ Engine: ระบบค้นหาฆาตกร ตำรวจ และปืน ]
+-- [ Engine: ระบบเบสบอล (Baseball Functions) ]
 ----------------------------------------------------------------
+-- ค้นหาลูกบอลในเกมเบสบอล (มักจะอยู่ใน Workspace หรือ Folder เฉพาะ)
+local function GetIncomingBaseball()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if (string.lower(obj.Name):find("ball") or string.lower(obj.Name):find("baseball") or string.lower(obj.Name):find("pitch")) and obj:IsA("BasePart") then
+            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if myHRP then
+                local dist = (obj.Position - myHRP.Position).Magnitude
+                -- ตรวจสอบว่าลูกบอลพุ่งเข้ามาใกล้ตัวในระยะที่กำหนด
+                if dist <= 40 then
+                    return obj, dist
+                end
+            end
+        end
+    end
+    return nil, 999
+end
+
+-- จำลองการคลิกตีบอล (Batting Action)
+local function PerformHit()
+    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    if tool then
+        tool:Activate()
+    else
+        -- ถ้าไม่ได้ถือเครื่องมือ ให้จำลองการกดคลิกซ้ายผ่าน VirtualUser หรือกดปุ่มตี
+        VirtualUser:Button1Down(Vector2.new(0,0), Camera.CFrame)
+        task.wait(0.05)
+        VirtualUser:Button1Up(Vector2.new(0,0), Camera.CFrame)
+    end
+end
+
+-- จำลองการกดใช้สกิล (เช่น ปุ่ม E หรือปุ่มคีย์ลัดสกิลในเกม)
+local function TriggerAutoSkill()
+    VirtualUser:KeyDown(Enum.KeyCode.E)
+    task.wait(0.1)
+    VirtualUser:KeyUp(Enum.KeyCode.E)
+end
+
+----------------------------------------------------------------
+-- [ Engine: ระบบค้นหาบทบาท และ ล็อคเป้า ]
+----------------------------------------------------------------
+local function GetClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+    local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = plr.Character.HumanoidRootPart
+            local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            if onScreen then
+                local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = plr
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
 local function GetMurdererPlayer()
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
@@ -169,35 +350,35 @@ local function GetMurderRole(plr)
 end
 
 ----------------------------------------------------------------
--- [ TAB 1: Main Xerox (Movement) ]
+-- [ TAB 1: Main Xerox (Movement & Universal Aimbot) ]
 ----------------------------------------------------------------
-local TabMain = Window:CreateTab("Main Xerox 🏃", 4483362456)
-TabMain:CreateSection("การเคลื่อนที่ & ตัวละคร")
+local TabMain = Window:CreateTab(L[CurrentLang].MainTab, 4483362456)
+local SecMovement = TabMain:CreateSection(L[CurrentLang].SecMovement)
 
-TabMain:CreateSlider({
-   Name = "วิ่งเร็ว (WalkSpeed)",
+local SliderWS = TabMain:CreateSlider({
+   Name = L[CurrentLang].WalkSpeed,
    Range = {16, 150},
    Increment = 1,
    CurrentValue = 16,
    Callback = function(v) WalkSpeedValue = v end,
 })
 
-TabMain:CreateSlider({
-   Name = "กระโดดสูง (JumpPower)",
+local SliderJP = TabMain:CreateSlider({
+   Name = L[CurrentLang].JumpPower,
    Range = {50, 250},
    Increment = 1,
    CurrentValue = 50,
    Callback = function(v) JumpPowerValue = v end,
 })
 
-TabMain:CreateToggle({
-   Name = "เดินทะลุกำแพง (Noclip)",
+local TogNoclip = TabMain:CreateToggle({
+   Name = L[CurrentLang].Noclip,
    CurrentValue = false,
    Callback = function(v) PlayClickSound() NoclipEnabled = v end,
 })
 
-TabMain:CreateToggle({
-   Name = "หายตัว (Invisible)",
+local TogInvis = TabMain:CreateToggle({
+   Name = L[CurrentLang].Invisible,
    CurrentValue = false,
    Callback = function(v)
       PlayClickSound()
@@ -211,20 +392,46 @@ TabMain:CreateToggle({
    end,
 })
 
+local SecUniversalAim = TabMain:CreateSection(L[CurrentLang].SecUniversalAim)
+
+local TogUniversalAim = TabMain:CreateToggle({
+   Name = L[CurrentLang].UniversalAimbot,
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() UniversalAimbotEnabled = v end,
+})
+
 ----------------------------------------------------------------
--- [ TAB 2: Pull & Control 🧲 ]
+-- [ TAB 2: Baseball Xerox ⚾ (ใหม่ล่าสุด) ]
 ----------------------------------------------------------------
-local TabPull = Window:CreateTab("Pull & Control 🧲", 4483362456)
-TabPull:CreateSection("เลือกเป้าหมาย")
+local TabBaseball = Window:CreateTab(L[CurrentLang].BaseballTab, 4483362456)
+local SecBaseball = TabBaseball:CreateSection(L[CurrentLang].SecBaseball)
+
+local TogAutoHit = TabBaseball:CreateToggle({
+   Name = L[CurrentLang].AutoHit,
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() AutoHitEnabled = v end,
+})
+
+local TogAutoSkill = TabBaseball:CreateToggle({
+   Name = L[CurrentLang].AutoSkill,
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() AutoSkillEnabled = v end,
+})
+
+----------------------------------------------------------------
+-- [ TAB 3: Pull & Control 🧲 ]
+----------------------------------------------------------------
+local TabPull = Window:CreateTab(L[CurrentLang].PullTab, 4483362456)
+local SecSelect = TabPull:CreateSection(L[CurrentLang].SecSelect)
 
 local playerNames = {}
 for _, p in pairs(Players:GetPlayers()) do
     if p ~= LocalPlayer then table.insert(playerNames, p.Name) end
 end
-if #playerNames == 0 then table.insert(playerNames, "ไม่มีผู้เล่นอื่น") end
+if #playerNames == 0 then table.insert(playerNames, L[CurrentLang].NoPlayer) end
 
-TabPull:CreateDropdown({
-   Name = "เลือกเป้าหมายคนในแมพ",
+local DropTarget = TabPull:CreateDropdown({
+   Name = L[CurrentLang].SelectTarget,
    Options = playerNames,
    CurrentOption = playerNames[1],
    Callback = function(Option)
@@ -234,10 +441,10 @@ TabPull:CreateDropdown({
    end,
 })
 
-TabPull:CreateSection("คำสั่งการดึง & ดีดคน")
+local SecControl = TabPull:CreateSection(L[CurrentLang].SecControl)
 
-TabPull:CreateButton({
-   Name = "🧲 ดึงเป้าหมายมาตรงหน้า",
+local BtnPull = TabPull:CreateButton({
+   Name = L[CurrentLang].PullTarget,
    Callback = function()
       PlayClickSound()
       if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
@@ -247,35 +454,34 @@ TabPull:CreateButton({
    end,
 })
 
-TabPull:CreateButton({
-   Name = "🚀 ดีดเป้าหมายออกนอกแมพ (Fling Target)",
+local BtnFling = TabPull:CreateButton({
+   Name = L[CurrentLang].FlingTarget,
    Callback = function()
       PlayClickSound()
       if SelectedTarget then FlingTarget(SelectedTarget) end
    end,
 })
 
-TabPull:CreateToggle({
-   Name = "🔄 ลูปดีดเป้าหมายเรื่อยๆ (Loop Fling)",
+local TogLoopFling = TabPull:CreateToggle({
+   Name = L[CurrentLang].LoopFling,
    CurrentValue = false,
    Callback = function(v) PlayClickSound() AutoFlingLoop = v end,
 })
 
-TabPull:CreateToggle({
-   Name = "⚔️ ดึงทุกคนในแมพมาฆ่า (Kill Aura Pull)",
+local TogKillAura = TabPull:CreateToggle({
+   Name = L[CurrentLang].KillAura,
    CurrentValue = false,
    Callback = function(v) PlayClickSound() KillAuraPull = v end,
 })
 
 ----------------------------------------------------------------
--- [ TAB 3: Murder Xerox 🔪 (อัปเดตฟีเจอร์เต็มรูปแบบ) ]
+-- [ TAB 4: Murder Xerox 🔪 ]
 ----------------------------------------------------------------
-local TabMurder = Window:CreateTab("Murder Xerox 🔪", 4483362456)
+local TabMurder = Window:CreateTab(L[CurrentLang].MurderTab, 4483362456)
+local SecGun = TabMurder:CreateSection(L[CurrentLang].SecGun)
 
-TabMurder:CreateSection("จัดการปืน (Gun Controls)")
-
-TabMurder:CreateButton({
-   Name = "🔫 ดึงปืนที่ตกมาหาตัว (Bring Gun)",
+local BtnBringGun = TabMurder:CreateButton({
+   Name = L[CurrentLang].BringGun,
    Callback = function()
       PlayClickSound()
       local gunDrop = GetDroppedGun()
@@ -291,8 +497,8 @@ TabMurder:CreateButton({
    end,
 })
 
-TabMurder:CreateButton({
-   Name = "⚡ วาร์ปไปหาปืนที่ตก (TP to Gun)",
+local BtnTPGun = TabMurder:CreateButton({
+   Name = L[CurrentLang].TPGun,
    Callback = function()
       PlayClickSound()
       local gunDrop = GetDroppedGun()
@@ -304,41 +510,46 @@ TabMurder:CreateButton({
    end,
 })
 
-TabMurder:CreateToggle({
-   Name = "🌟 ESP มองเห็นปืนที่ตก (สีทอง)",
+local TogGunESP = TabMurder:CreateToggle({
+   Name = L[CurrentLang].GunESP,
    CurrentValue = false,
-   Callback = function(v)
-      PlayClickSound()
-      GunESPEnabled = v
-   end,
+   Callback = function(v) PlayClickSound() GunESPEnabled = v end,
 })
 
-TabMurder:CreateSection("จัดการผู้เล่น (Murderer & Sheriff)")
+local SecMurderControl = TabMurder:CreateSection(L[CurrentLang].SecMurderControl)
 
-TabMurder:CreateButton({
-   Name = "🚀 ดีดฆาตกรออกนอกแมพ (Fling Murderer)",
+local TogAimMurder = TabMurder:CreateToggle({
+   Name = L[CurrentLang].AimMurder,
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() AimMurdererEnabled = v end,
+})
+
+local TogAimSheriff = TabMurder:CreateToggle({
+   Name = L[CurrentLang].AimSheriff,
+   CurrentValue = false,
+   Callback = function(v) PlayClickSound() AimSheriffEnabled = v end,
+})
+
+local BtnFlingMurder = TabMurder:CreateButton({
+   Name = L[CurrentLang].FlingMurder,
    Callback = function()
       PlayClickSound()
       local murderer = GetMurdererPlayer()
-      if murderer then
-          FlingTarget(murderer)
-      end
+      if murderer then FlingTarget(murderer) end
    end,
 })
 
-TabMurder:CreateButton({
-   Name = "🚀 ดีดตำรวจออกนอกแมพ (Fling Sheriff)",
+local BtnFlingSheriff = TabMurder:CreateButton({
+   Name = L[CurrentLang].FlingSheriff,
    Callback = function()
       PlayClickSound()
       local sheriff = GetSheriffPlayer()
-      if sheriff then
-          FlingTarget(sheriff)
-      end
+      if sheriff then FlingTarget(sheriff) end
    end,
 })
 
-TabMurder:CreateButton({
-   Name = "🔪 วาร์ปไปหาฆาตกร (TP Murderer)",
+local BtnTPMurder = TabMurder:CreateButton({
+   Name = L[CurrentLang].TPMurder,
    Callback = function()
       PlayClickSound()
       local m = GetMurdererPlayer()
@@ -349,8 +560,8 @@ TabMurder:CreateButton({
    end,
 })
 
-TabMurder:CreateButton({
-   Name = "👮 วาร์ปไปหาตำรวจ (TP Sheriff)",
+local BtnTPSheriff = TabMurder:CreateButton({
+   Name = L[CurrentLang].TPSheriff,
    Callback = function()
       PlayClickSound()
       local s = GetSheriffPlayer()
@@ -361,34 +572,94 @@ TabMurder:CreateButton({
    end,
 })
 
-TabMurder:CreateSection("ระบบช่วยเล่นอื่นๆ")
+local SecMurderMisc = TabMurder:CreateSection(L[CurrentLang].SecMurderMisc)
 
-TabMurder:CreateToggle({
-   Name = "🎯 ESP แยกบทบาทผู้เล่น (ฆาตกร/ตำรวจ)",
+local TogRoleESP = TabMurder:CreateToggle({
+   Name = L[CurrentLang].RoleESP,
    CurrentValue = false,
    Callback = function(v) PlayClickSound() MurderESPEnabled = v end,
 })
 
-TabMurder:CreateToggle({
-   Name = "🌀 ยิงกระสุนโค้ง (Curve Bullet)",
+local TogCurveBullet = TabMurder:CreateToggle({
+   Name = L[CurrentLang].CurveBullet,
    CurrentValue = false,
    Callback = function(v) PlayClickSound() CurveBulletEnabled = v end,
 })
 
-TabMurder:CreateToggle({
-   Name = "🔪 ล็อคเป้าฆาตกร (AimLock)",
-   CurrentValue = false,
-   Callback = function(v) PlayClickSound() AimLockMurderEnabled = v end,
+----------------------------------------------------------------
+-- [ TAB 5: Setting Xerox ⚙️ ]
+----------------------------------------------------------------
+local TabSettings = Window:CreateTab(L[CurrentLang].SettingTab, 4483362456)
+local SecLang = TabSettings:CreateSection(L[CurrentLang].SecLang)
+
+-- ฟังก์ชันอัปเดตภาษา UI
+local function UpdateLanguage(lang)
+    CurrentLang = lang
+    local text = L[CurrentLang]
+
+    -- Tab Main
+    SecMovement:Set(text.SecMovement)
+    SliderWS:Set(text.WalkSpeed)
+    SliderJP:Set(text.JumpPower)
+    TogNoclip:Set(text.Noclip)
+    TogInvis:Set(text.Invisible)
+    SecUniversalAim:Set(text.SecUniversalAim)
+    TogUniversalAim:Set(text.UniversalAimbot)
+
+    -- Tab Baseball
+    SecBaseball:Set(text.SecBaseball)
+    TogAutoHit:Set(text.AutoHit)
+    TogAutoSkill:Set(text.AutoSkill)
+
+    -- Tab Pull
+    SecSelect:Set(text.SecSelect)
+    DropTarget:Set(text.SelectTarget)
+    SecControl:Set(text.SecControl)
+    BtnPull:Set(text.PullTarget)
+    BtnFling:Set(text.FlingTarget)
+    TogLoopFling:Set(text.LoopFling)
+    TogKillAura:Set(text.KillAura)
+
+    -- Tab Murder
+    SecGun:Set(text.SecGun)
+    BtnBringGun:Set(text.BringGun)
+    BtnTPGun:Set(text.TPGun)
+    TogGunESP:Set(text.GunESP)
+    SecMurderControl:Set(text.SecMurderControl)
+    TogAimMurder:Set(text.AimMurder)
+    TogAimSheriff:Set(text.AimSheriff)
+    BtnFlingMurder:Set(text.FlingMurder)
+    BtnFlingSheriff:Set(text.FlingSheriff)
+    BtnTPMurder:Set(text.TPMurder)
+    BtnTPSheriff:Set(text.TPSheriff)
+    SecMurderMisc:Set(text.SecMurderMisc)
+    TogRoleESP:Set(text.RoleESP)
+    TogCurveBullet:Set(text.CurveBullet)
+
+    -- Tab Settings
+    SecLang:Set(text.SecLang)
+    SecGraphics:Set(text.SecGraphics)
+    TogAntiKick:Set(text.AntiKick)
+    TogPotato:Set(text.Potato)
+    TogFullBright:Set(text.FullBright)
+    BtnDeleteWalls:Set(text.DeleteWalls)
+end
+
+TabSettings:CreateDropdown({
+   Name = L[CurrentLang].SelectLang,
+   Options = {"ไทย (Thai)", "English"},
+   CurrentOption = "ไทย (Thai)",
+   Callback = function(Option)
+      PlayClickSound()
+      if type(Option) == "table" then Option = Option[1] end
+      if Option == "English" then UpdateLanguage("EN") else UpdateLanguage("TH") end
+   end,
 })
 
-----------------------------------------------------------------
--- [ TAB 4: Setting Xerox ⚙️ ]
-----------------------------------------------------------------
-local TabSettings = Window:CreateTab("Setting Xerox ⚙️", 4483362456)
-TabSettings:CreateSection("การป้องกัน & กราฟิก")
+local SecGraphics = TabSettings:CreateSection(L[CurrentLang].SecGraphics)
 
-TabSettings:CreateToggle({
-   Name = "🛡️ กันโดนเตะ (Anti-Kick)",
+local TogAntiKick = TabSettings:CreateToggle({
+   Name = L[CurrentLang].AntiKick,
    CurrentValue = false,
    Callback = function(v)
       PlayClickSound()
@@ -412,8 +683,8 @@ TabSettings:CreateToggle({
    end,
 })
 
-TabSettings:CreateToggle({
-   Name = "🥔 ภาพดินน้ำมัน (Potato Graphics)",
+local TogPotato = TabSettings:CreateToggle({
+   Name = L[CurrentLang].Potato,
    CurrentValue = false,
    Callback = function(v)
       PlayClickSound()
@@ -432,8 +703,8 @@ TabSettings:CreateToggle({
    end,
 })
 
-TabSettings:CreateToggle({
-   Name = "💡 เพิ่มแสงสว่าง (FullBright)",
+local TogFullBright = TabSettings:CreateToggle({
+   Name = L[CurrentLang].FullBright,
    CurrentValue = false,
    Callback = function(v)
       PlayClickSound()
@@ -443,9 +714,9 @@ TabSettings:CreateToggle({
    end,
 })
 
-TabSettings:CreateButton({
-   Name = "🧱 ลบกำแพงแมพออก (Delete Walls)",
-   Callback = function()
+local BtnDeleteWalls = TabSettings:CreateButton({
+   Name = L[CurrentLang].DeleteWalls,
+   Callback = function(v)
       PlayClickSound()
       for _, p in pairs(workspace:GetDescendants()) do
           if p.Name == "WallL" or p.Name == "WallR" then p:Destroy() end
@@ -474,6 +745,21 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
+    -- ⚾ ระบบเบสบอลอัตโนมัติ (Auto Hit & Auto Skill)
+    if AutoHitEnabled then
+        local ball, dist = GetIncomingBaseball()
+        if ball and dist <= HitDistanceThreshold then
+            PerformHit()
+        end
+    end
+
+    if AutoSkillEnabled then
+        -- ใช้สกิลทุกๆ รอบลูปเมื่อเปิดใช้งาน (หรือใส่เงื่อนไขคูลดาวน์สกิลตามแมพ)
+        task.spawn(function()
+            pcall(function() TriggerAutoSkill() end)
+        end)
+    end
+
     if KillAuraPull and myHRP then
         local tool = myChar:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
         if tool and tool.Parent == LocalPlayer.Backpack then myHum:EquipTool(tool) end
@@ -489,14 +775,25 @@ RunService.RenderStepped:Connect(function()
         FlingTarget(SelectedTarget)
     end
 
-    if AimLockMurderEnabled then
+    -- [ ระบบ Aimbot ]
+    if UniversalAimbotEnabled then
+        local closest = GetClosestPlayer()
+        if closest and closest.Character and closest.Character:FindFirstChild("HumanoidRootPart") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, closest.Character.HumanoidRootPart.Position)
+        end
+    elseif AimMurdererEnabled then
         local m = GetMurdererPlayer()
         if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") then
-            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, m.Character.HumanoidRootPart.Position)
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, m.Character.HumanoidRootPart.Position)
+        end
+    elseif AimSheriffEnabled then
+        local s = GetSheriffPlayer()
+        if s and s.Character and s.Character:FindFirstChild("HumanoidRootPart") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, s.Character.HumanoidRootPart.Position)
         end
     end
 
-    -- ระบบ ESP แสดงผลบทบาทผู้เล่น
+    -- [ ระบบ ESP ]
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
@@ -520,7 +817,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ระบบ ESP ปืนตกสีทอง
     local droppedGun = GetDroppedGun()
     if droppedGun then
         local gunHighlight = droppedGun:FindFirstChild("XVP_GunHighlight")
@@ -528,7 +824,7 @@ RunService.RenderStepped:Connect(function()
             if not gunHighlight then
                 gunHighlight = Instance.new("Highlight", droppedGun)
                 gunHighlight.Name = "XVP_GunHighlight"
-                gunHighlight.FillColor = Color3.fromRGB(255, 215, 0) -- สีทอง
+                gunHighlight.FillColor = Color3.fromRGB(255, 215, 0)
                 gunHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
             end
             gunHighlight.Enabled = true
